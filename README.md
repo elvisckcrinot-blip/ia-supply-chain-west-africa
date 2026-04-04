@@ -19,4 +19,4 @@ En utilisant un modèle **Random Forest**, j'ai simulé l'optimisation des déla
 ### 💡 Pourquoi ce projet ?
 En Afrique de l'Ouest, la souveraineté industrielle dépend de notre capacité à transformer l'incertitude logistique en décisions basées sur la donnée. Ce projet fait le pont entre la **Recherche Opérationnelle** et la **Supply Chain 4.0**.
 
-[Voir le code de simulation](simulation_impact.py) | [Me contacter sur LinkedIn](TON_LIEN_LINKEDIN)
+[Voir le code de simulation](simulation_impact.py) | [Me contacter sur LinkedIn](https://www.linkedin.com/in/elvis-crinot-346525202)
