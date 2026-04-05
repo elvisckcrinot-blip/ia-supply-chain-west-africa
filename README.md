@@ -30,4 +30,22 @@ Basé sur une analyse terrain du Système de Management de la Sécurité des Den
 - **Suivi Digital des Pertes :** Mise en œuvre de l'objectif de **0,20%** via le script `fludor_kpi_tracker.py`.
 - **Analyse en Temps Réel :** Passage d'un suivi trimestriel manuel à une surveillance automatisée des flux.
 - **Qualité & Conformité :** Sécurisation du taux de conformité des produits finis (>95%) grâce à la traçabilité numérique.
-  
+---
+
+## 📈 Analyse du Graphique de Performance (Site de Cana)
+
+Ce graphique illustre la variabilité du taux de perte de matières premières sur une semaine de production chez **Fludor SA**.
+
+### 🔍 Interprétation des Résultats :
+*   **Performance Globale :** L'objectif de **0,20%** (ligne rouge pointillée) est atteint **3 jours sur 7** (Lundi, Mercredi et Samedi).
+*   **Points Critiques :** 
+    *   Le **Jeudi** présente le pic de perte le plus élevé (**0,30%**), dépassant largement le seuil de tolérance.
+    *   Le **Mardi** et le **Dimanche** montrent également des dérives nécessitant une surveillance accrue.
+*   **Succès Opérationnel :** Le **Vendredi** marque la meilleure performance de la semaine avec un taux exceptionnellement bas de **0,12%**.
+
+### 💻 Détails Techniques
+Pour comprendre la logique de calcul et de génération de ce visuel :
+👉 **[Voir le code source : fludor_analytics.py](./fludor_analytics.py)**
+
+---
+
