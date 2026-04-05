@@ -30,4 +30,10 @@ Basé sur une analyse terrain du Système de Management de la Sécurité des Den
 - **Suivi Digital des Pertes :** Mise en œuvre de l'objectif de **0,20%** via le script `fludor_kpi_tracker.py`.
 - **Analyse en Temps Réel :** Passage d'un suivi trimestriel manuel à une surveillance automatisée des flux.
 - **Qualité & Conformité :** Sécurisation du taux de conformité des produits finis (>95%) grâce à la traçabilité numérique.
-- 
+- ### 📊 Visualisation de la Performance (Simulation)
+Voici à quoi ressemble le tableau de bord dynamique que nous proposons pour remplacer le suivi manuel :
+
+![Graphique de Suivi des Pertes](https://githubusercontent.com)
+
+> *Note : Ce graphique compare les pertes réelles (ligne bleue) à l'objectif de 0,20% (ligne rouge). Il permet d'identifier immédiatement les jours critiques pour une intervention rapide.*
+> 
