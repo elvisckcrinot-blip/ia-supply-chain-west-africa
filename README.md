@@ -35,7 +35,7 @@ Basé sur une analyse terrain du Système de Management de la Sécurité des Den
 ## 📈 Analyse du Graphique de Performance (Site de Cana)
 
 Ce graphique illustre la variabilité du taux de perte de matières premières sur une semaine de production chez **Fludor SA**.
-
+![Analyse des Pertes](./visualisation_pertes.png)
 ### 🔍 Interprétation des Résultats :
 *   **Performance Globale :** L'objectif de **0,20%** (ligne rouge pointillée) est atteint **3 jours sur 7** (Lundi, Mercredi et Samedi).
 *   **Points Critiques :** 
@@ -46,6 +46,6 @@ Ce graphique illustre la variabilité du taux de perte de matières premières s
 ### 💻 Détails Techniques
 Pour comprendre la logique de calcul et de génération de ce visuel :
 👉 **[Voir le code source : fludor_analytics.py](./fludor_analytics.py)**
-![Analyse](./visualisation_pertes.png)
+
 ---
 
