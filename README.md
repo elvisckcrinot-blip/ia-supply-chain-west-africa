@@ -48,26 +48,3 @@ Pour comprendre la logique de calcul et de génération de ce visuel :
 👉 **[Voir le code source : fludor_analytics.py](./fludor_analytics.py)**
 
 ---
-## 🚛 Optimisation Logistique : Réduction des Surestaries (Modèle de Little)
-
-Ce module utilise la **Théorie des Files d'Attente (M/M/1)** pour optimiser le flux des citernes à l'entrée de l'usine et réduire les coûts d'immobilisation.
-
-### 📝 Scénario de Simulation 
-*   **Flux entrant ($\lambda$) :** 3 camions / heure.
-*   **Capacité actuelle ($\mu$) :** 4 camions / heure.
-*   **Coût d'immobilisation :** 25 000 FCFA / heure par camion.
-
-### 🔢 Analyse Mathématique & ROI
-En utilisant le script `simulation_impact.py`, nous avons comparé l'impact d'une augmentation de la capacité de dépotage :
-
-
-| Indicateur | Capacité Actuelle (4 cam/h) | Capacité Optimisée (5 cam/h) | Gain |
-| :--- | :--- | :--- | :--- |
-| **Temps d'attente moyen** | **45 minutes** | **18 minutes** | **-27 min / camion** |
-| **Coût mensuel estimé** | 13 500 000 FCFA | 5 400 000 FCFA | **8 100 000 FCFA** |
-
-### 💡 Conclusion Stratégique
-L'investissement dans l'amélioration du dépotage (matériel ou personnel) est **justifié jusqu'à une hauteur de 8,1 millions FCFA par mois**. Cette optimisation permet de rentabiliser l'opération dès le premier mois grâce à la suppression des surestaries inutiles.
-
-👉 **[Voir le script de simulation : simulation_impact.py](./simulation_impact.py)**
-
