@@ -46,6 +46,6 @@ Ce graphique illustre la variabilité du taux de perte de matières premières s
 ### 💻 Détails Techniques
 Pour comprendre la logique de calcul et de génération de ce visuel :
 👉 **[Voir le code source : fludor_analytics.py](./fludor_analytics.py)**
-
+![Analyse](./visualisation_pertes.png)
 ---
 
