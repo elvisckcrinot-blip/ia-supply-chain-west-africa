@@ -1,4 +1,4 @@
-# 🌍 AI for Industrial Sovereignty in West Africa
+# AI for Industrial Sovereignty in West Africa
 
 ### Modélisation de l'impact de l'IA prédictive sur la Supply Chain 4.0
 
