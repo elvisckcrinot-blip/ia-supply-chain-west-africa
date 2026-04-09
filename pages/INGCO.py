@@ -2,48 +2,56 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="INGCO - Import Réel", layout="wide")
+# 1. CONFIGURATION
+st.set_page_config(page_title="INGCO - Stratégie MIT", layout="wide")
+st.title("📦 INGCO BÉNIN : Pilotage & Simulation")
 
-st.title("📦 INGCO BÉNIN : Importation de Données")
-
-# --- SYSTÈME D'IMPORTATION ---
-st.sidebar.header("Configuration")
-uploaded_file = st.sidebar.file_uploader("Charger le fichier Excel INGCO", type=["xlsx", "csv"])
+# 2. IMPORTATION & DONNÉES
+st.sidebar.header("📂 Données Réelles")
+uploaded_file = st.sidebar.file_uploader("Charger Excel INGCO", type=["xlsx", "csv"])
 
 if uploaded_file is not None:
-    # Lecture des données réelles
-    if uploaded_file.name.endswith('.csv'):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-    st.success("✅ Données réelles chargées avec succès !")
+    df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
 else:
-    # Données par défaut si aucun fichier n'est chargé
-    st.warning("⚠️ Utilisation des données de simulation (chargez un fichier pour actualiser)")
+    # Simulation par défaut (500 articles)
     data = {
         'ref_sku': [f'ING-REF-{i}' for i in range(1, 501)],
-        'designation': [f'Outil Pro {i}' for i in range(1, 501)],
-        'prix_usine_fcfa': [150000 if i % 10 == 0 else 12500 for i in range(1, 501)],
-        'vol_unitaire_cbm': [0.15 if i % 10 == 0 else 0.005 for i in range(1, 501)],
+        'designation': [f'Outil {i}' for i in range(1, 501)],
+        'prix_usine': [150000 if i % 10 == 0 else 12000 for i in range(1, 501)],
+        'vente_moy_jour': [2 if i % 10 == 0 else 5 for i in range(1, 501)],
         'lead_time_jours': [60] * 500,
-        'vente_moy_jour': [2] * 500,
-        'stock_physique': [145] * 500,
+        'stock_physique': [140 if i % 10 == 0 else 300 for i in range(1, 501)],
         'stock_securite': [30] * 500
     }
     df = pd.DataFrame(data)
 
-# --- MOTEUR DE CALCUL MIT ---
-df['ROP'] = (df['vente_moy_jour'] * df['lead_time_jours']) + df['stock_securite']
-df['alerte'] = df.apply(lambda x: '🔴 RUPTURE' if x['stock_physique'] <= x['ROP'] else '🟢 OK', axis=1)
+# 3. 🕹️ MODULE DE SIMULATION (L'intelligence ajoutée)
+st.sidebar.markdown("---")
+st.sidebar.header("🕹️ Simulateur de Scénarios")
+facteur_demande = st.sidebar.slider("Hausse de la demande (%)", 0, 100, 0) / 100
+retard_port = st.sidebar.number_input("Retard au Port de Cotonou (jours)", 0, 60, 0)
 
-# --- AFFICHAGE DES RÉSULTATS ---
-st.metric("Nombre d'articles analysés", len(df))
+# Calcul des impacts
+df['ROP_Actuel'] = (df['vente_moy_jour'] * df['lead_time_jours']) + df['stock_securite']
+df['ROP_Simule'] = ((df['vente_moy_jour'] * (1 + facteur_demande)) * (df['lead_time_jours'] + retard_port)) + df['stock_securite']
 
-st.subheader("🔍 Aperçu de l'inventaire")
-st.dataframe(df, use_container_width=True)
+df['Statut_Simule'] = df.apply(lambda x: '🔴 RISQUE' if x['stock_physique'] <= x['ROP_Simule'] else '🟢 OK', axis=1)
 
-# Graphique de rupture
-fig = px.pie(df, names='alerte', title="État global des stocks", color='alerte',
-             color_discrete_map={'🔴 RUPTURE':'red', '🟢 OK':'green'})
-st.plotly_chart(fig)
-    
+# 4. DASHBOARD VISUEL
+col1, col2 = st.columns(2)
+with col1:
+    ruptures_simulees = len(df[df['Statut_Simule'] == '🔴 RISQUE'])
+    st.metric("Alertes Scénario", ruptures_simulees, delta=f"{ruptures_simulees - len(df[df['stock_physique'] <= df['ROP_Actuel']])} nouvelles", delta_color="inverse")
+
+with col2:
+    valeur_risque = df[df['Statut_Simule'] == '🔴 RISQUE']['prix_usine'].sum()
+    st.metric("Valeur CA en Risque", f"{valeur_risque:,.0f} FCFA")
+
+st.subheader("📊 Comparaison : Stock Réel vs Besoin Simulé")
+fig = px.scatter(df.head(50), x='ref_sku', y=['stock_physique', 'ROP_Simule'], 
+                 title="Capacité de résistance du stock par article",
+                 labels={'value': 'Quantité', 'variable': 'Indicateur'})
+st.plotly_chart(fig, use_container_width=True)
+
+st.dataframe(df[['ref_sku', 'stock_physique', 'ROP_Actuel', 'ROP_Simule', 'Statut_Simule']], use_container_width=True)
+        
