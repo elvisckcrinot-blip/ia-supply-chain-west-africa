@@ -1,101 +1,43 @@
 import streamlit as st
 import pandas as pd
 
-# 1. CONFIGURATION (TMS Logistics)
-st.set_page_config(page_title="TMS Logistics - Pilotage Opérationnel", layout="wide", page_icon="🚛")
+st.set_page_config(page_title="TMS Expert - MIT CTL Metrics", layout="wide")
 
-# Style CSS pour une immersion professionnelle
-st.markdown("""
-    <style>
-    .main { background-color: #f9f9f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    footer {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+st.title("🚛 TMS : Ingénierie du Transport (Modèles SC1x)")
+st.info("Focus : Efficacité Tonne-Kilomètre & Intensité Énergétique")
 
-st.title("🚛 TMS Logistics : Pilotage & Optimisation")
-st.info("Système intégré : Suivi Territorial Bénin")
-st.markdown("---")
+# --- INPUTS OPÉRATIONNELS ---
+with st.sidebar:
+    st.header("Paramètres de Flotte")
+    charge_utile = st.number_input("Charge utile par camion (Tonnes)", value=25.0)
+    taux_remplissage = st.slider("Taux de remplissage moyen (%)", 10, 100, 85) / 100
+    conso_moyenne = st.number_input("Consommation (L/100km)", value=32.0)
+    prix_diesel = 700 # FCFA
 
-# --- DATASET : RÉFÉRENTIEL DES DISTANCES BÉNIN (DEPUIS USINE X) ---
-villes_benin = {
-    "Usine X (Départ)": 0, "Abomey-Calavi": 15, "Cotonou": 25, "Ouidah": 35,
-    "Allada": 12, "Porto-Novo": 65, "Bohicon": 105, "Dassa": 185,
-    "Savalou": 205, "Glazoué": 200, "Parakou": 395, "Djougou": 450,
-    "Natitingou": 520, "Kandi": 615, "Malanville": 720
-}
-liste_villes = sorted(list(villes_benin.keys()))
+# --- CALCULS EXPERTS MIT (SC1x) ---
+# 1. Analyse Tonne-Kilomètre (Le standard de mesure MIT)
+charge_reelle = charge_utile * taux_remplissage
+# Estimation du coût variable au km
+cout_km = (conso_moyenne / 100) * prix_diesel
+# Coût par Tonne-Kilomètre (Unit Revenue/Cost analysis)
+cout_tkm = cout_km / charge_reelle
 
-# --- INITIALISATION DE LA MÉMOIRE (SESSION STATE) ---
-if 'db_tms' not in st.session_state:
-    st.session_state.db_tms = pd.DataFrame([
-        {'ID': 'EXP-UX-101', 'Article': 'Groupe INGCO', 'Position': 'Bohicon', 'Statut': 'En Transit'}
-    ])
+# 2. Intensité Émissions (SC0x - Supply Chain Sustainability)
+# Facteur d'émission standard : 2.68 kg CO2 par litre de diesel
+emissions_km = (conso_moyenne / 100) * 2.68
+emissions_tkm = emissions_km / charge_reelle
 
-# --- MODULE 1 : OPTIMISATION DU ROUTING ---
-st.header("⛽ 1. Efficacité Énergétique & ROI")
-with st.expander("📊 Paramètres du Modèle d'Optimisation", expanded=True):
-    col_p1, col_p2, col_p3 = st.columns(3)
-    n = col_p1.number_input("Flotte (Camions)", value=10, min_value=1)
-    d_actuelle = col_p2.number_input("Distance actuelle (km/j)", value=80.0)
-    d_opti = col_p2.number_input("Distance optimisée (km/j)", value=65.0)
-    jours = col_p3.number_input("Jours d'activité / an", value=300)
-    conso = col_p3.number_input("Conso (L/100km)", value=12.0)
-
-# Calculs Stratégiques
-gain_km_annuel = (d_actuelle - d_opti) * n * jours
-economie_fcfa = gain_km_annuel * (conso / 100) * 700 # Prix fixe 700 FCFA/L
-
-# Affichage des KPIs
-m1, m2, m3 = st.columns(3)
-m1.metric("Gain Annuel", f"{economie_fcfa:,.0f} FCFA")
-m2.metric("Distance Sauvée", f"{gain_km_annuel:,.0f} km/an")
-m3.metric("CO2 Évité", f"{(gain_km_annuel * 0.12 * 2.6):,.0f} kg")
-
-st.warning(f"**Note Stratégique :** L'économie de {economie_fcfa:,.0f} FCFA permet d'optimiser les ressources opérationnelles.")
-st.markdown("---")
-
-# --- MODULE 2 : DOCKING & GESTION DES FLUX ---
-st.header("🏢 2. Gestion du Docking")
-col_d1, col_d2 = st.columns([1, 1.5])
-with col_d1:
-    with st.form("docking_form"):
-        st.subheader("Contrôle d'Accès")
-        camion = st.text_input("Immatriculation", "RB 0000")
-        flux = st.selectbox("Type d'opération", ["Chargement", "Déchargement"])
-        if st.form_submit_button("Valider"):
-            st.success(f"Accès autorisé : {camion}")
-with col_d2:
-    st.subheader("État des Quais")
-    st.table(pd.DataFrame({'Quai': ['A1', 'A2', 'B1'], 'Statut': ['🔴 Occupé', '🟢 Libre', '🟢 Libre']}))
+# --- DASHBOARD ---
+c1, c2, c3 = st.columns(3)
+c1.metric("Coût Tonne-Kilomètre", f"{cout_tkm:.2f} FCFA", help="Indicateur clé de performance financière MIT")
+c2.metric("Intensité CO2", f"{emissions_tkm:.4f} kg/T.km", help="Mesure de durabilité SC0x")
+c3.metric("Charge Réelle", f"{charge_reelle:.1f} Tonnes")
 
 st.markdown("---")
+st.subheader("📍 Suivi Territorial & Logique de Proximité")
+villes = {"Usine X": 0, "Cotonou": 25, "Bohicon": 105, "Parakou": 395, "Malanville": 720}
+selection = st.select_slider("Position du Camion", options=list(villes.keys()))
 
-# --- MODULE 3 : TRACKING & LOCALISATION BÉNIN ---
-st.header("📦 3. Suivi des Expéditions (TMS)")
-with st.form("tracking_form", clear_on_submit=True):
-    col_t1, col_t2, col_t3 = st.columns(3)
-    id_exp = col_t1.text_input("ID Expédition", placeholder="EXP-XXX")
-    pos_gps = col_t2.selectbox("Dernière Position Constatée", liste_villes)
-    status = col_t3.selectbox("Statut Livraison", ["Préparation", "En Transit", "Livré", "Incident"])
-    
-    if st.form_submit_button("Actualiser le Tracking"):
-        if id_exp:
-            new_row = pd.DataFrame([{'ID': id_exp, 'Article': 'Matériel INGCO', 'Position': pos_gps, 'Statut': status}])
-            st.session_state.db_tms = pd.concat([st.session_state.db_tms, new_row], ignore_index=True)
-            st.toast(f"Mise à jour effectuée : {pos_gps}")
-        else:
-            st.error("Veuillez saisir une référence.")
-
-# Tableau de bord TMS
-st.subheader("📋 Dashboard Opérationnel")
-st.dataframe(st.session_state.db_tms, use_container_width=True)
-
-# Intelligence de Progression
-if not st.session_state.db_tms.empty:
-    actuelle = st.session_state.db_tms.iloc[-1]['Position']
-    km_faits = villes_benin.get(actuelle, 0)
-    st.markdown(f"**📍 Localisation Actuelle : {actuelle}** ({km_faits} km parcourus depuis Usine X)")
-    st.progress(min(km_faits / 720, 1.0))
-
-st.success("🎯 TMS Opérationnel : Pilotage des flux activé.")
+# Calcul du "Ton-Mile" réalisé (Work done)
+travail_realise = charge_reelle * villes[selection]
+st.write(f"📊 **Travail Logistique Réalisé :** {travail_realise:,.0f} Tonnes-km")
