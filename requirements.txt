@@ -1,20 +1,11 @@
-# --- Base et Interface ---
-streamlit==1.31.0
+streamlit
 pandas
 numpy
-
-# --- Intelligence Artificielle et Prédiction ---
-scikit-learn        # Pour les modèles de prévision de demande et d'ETA
-statsmodels         # Pour l'analyse statistique des séries temporelles (SC1x)
-
-# --- Optimisation Logistique ---
-scipy               # Pour les modèles d'optimisation mathématique
-
-# --- Visualisation de données avancée ---
-plotly              # Graphiques interactifs (indispensable pour le TMS)
+scikit-learn
+statsmodels
+scipy
+plotly
 matplotlib
 seaborn
-
-# --- Utilitaires ---
-requests            # Pour connecter des API externes (météo, trafic)
-
+requests
+openpyxl
