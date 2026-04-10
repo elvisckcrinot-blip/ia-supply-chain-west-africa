@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # CONFIGURATION
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.set_page_config(
     page_title="TMS Logistics · MIT CTL",
     page_icon="🚛",
@@ -11,9 +12,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # CSS
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
@@ -44,13 +45,11 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 }
 .page-tag {
     display: inline-block;
-    background: rgba(255,173,31,0.15);
-    color: #ffad1f;
+    background: rgba(255,173,31,0.15); color: #ffad1f;
     font-size: 10px; font-weight: 700;
     letter-spacing: 2.5px; text-transform: uppercase;
     padding: 5px 14px; border-radius: 20px;
-    border: 1px solid rgba(255,173,31,0.3);
-    margin-bottom: 14px;
+    border: 1px solid rgba(255,173,31,0.3); margin-bottom: 14px;
 }
 .page-title {
     font-family: 'Syne', sans-serif;
@@ -105,7 +104,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .stProgress > div > div { background-color: #ffad1f !important; }
 
 /* ── Inputs ── */
-.stTextInput input, .stSelectbox select, .stNumberInput input {
+.stTextInput input, .stNumberInput input {
     background: rgba(255,255,255,0.05) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
     color: #e8edf5 !important;
@@ -120,10 +119,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
     border: none !important; border-radius: 8px !important;
     padding: 10px 24px !important;
 }
-.stButton > button:hover {
-    opacity: 0.88 !important;
-    transform: translateY(-1px) !important;
-}
+.stButton > button:hover { opacity: 0.88 !important; }
 
 /* ── Form submit ── */
 [data-testid="stFormSubmitButton"] > button {
@@ -143,6 +139,7 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
 /* ── Alerts ── */
 .stAlert { border-radius: 10px !important; }
+[data-baseweb="notification"] { border-radius: 10px !important; }
 
 /* ── Expander ── */
 .streamlit-expanderHeader {
@@ -179,52 +176,98 @@ header    { visibility: hidden; }
 """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # DONNÉES DE RÉFÉRENCE
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
+
+# Distances depuis l'Usine X / GDIZ (Glo-Djigbé)
 VILLES_BENIN = {
-    "GDIZ (Départ)":  0,
-    "Abomey-Calavi":  15,
-    "Cotonou":        25,
-    "Ouidah":         35,
-    "Allada":         12,
-    "Porto-Novo":     65,
-    "Bohicon":        105,
-    "Dassa":          185,
-    "Savalou":        205,
-    "Glazoué":        200,
-    "Parakou":        395,
-    "Djougou":        450,
-    "Natitingou":     520,
-    "Kandi":          615,
-    "Malanville":     720,
+    "Usine X · GDIZ (Départ)": 0,
+    "Glo-Djigbé":               5,
+    "Abomey-Calavi":            15,
+    "Cotonou":                  25,
+    "Sèmè-Kpodji":              40,
+    "Ouidah":                   45,
+    "Allada":                   45,
+    "Porto-Novo":               55,
+    "Cana":                     95,
+    "Bohicon":                 105,
+    "Dassa":                   185,
+    "Glazoué":                 205,
+    "Savalou":                 215,
+    "Savè":                    235,
+    "Parakou":                 395,
+    "Djougou":                 450,
+    "Natitingou":              520,
+    "Kandi":                   615,
+    "Malanville":              720,
 }
-DISTANCE_MAX    = 720   # Malanville
-PRIX_CARBURANT  = 700   # FCFA / L
-CO2_PAR_LITRE   = 2.6   # kg CO2 / L
-SALAIRE_ANNUEL  = 756_000  # FCFA
+DISTANCE_MAX   = 720       # km — Malanville (point terminal)
+PRIX_CARBURANT = 700       # FCFA / litre
+CO2_PAR_LITRE  = 2.6       # kg CO₂ / litre
+SALAIRE_ANNUEL = 756_000   # FCFA — base calcul emploi local
 
 LISTE_VILLES = sorted(VILLES_BENIN.keys())
-STATUTS      = ["Préparation", "En Transit", "Livré", "Incident"]
 
+# Marchandises traitées sur le corridor GDIZ → Malanville
+# Regroupées par filière pour la lisibilité du formulaire
+MARCHANDISES = sorted([
+    # Agro-industrie & céréales
+    "Cajou", "Coton brut", "Huile de palme", "Maïs", "Manioc transformé",
+    "Riz paddy", "Soja", "Tourteau de soja",
+    # BTP & matériaux
+    "Agrégats / Gravier", "Bois de construction", "Carrelage",
+    "Ciment Dangote", "Fer à béton", "Tuyauterie PVC",
+    # Équipements & outillage
+    "Équipements frigorifiques", "Groupe électrogène INGCO",
+    "Matériel électrique", "Outillage INGCO",
+    # Énergie & chimie
+    "Carburant (fûts)", "Engrais NPK", "Gaz butane",
+    "Produits phytosanitaires",
+    # Distribution & consommation
+    "Boissons (palette)", "Produits alimentaires emballés",
+])
+
+STATUTS = ["Préparation", "En Transit", "Livré", "Incident"]
+
+# Systèmes pilotant les flux logistiques
+SYSTEMES_PILOTAGE = {
+    "TMS — Transport Management System": "Orchestration des tournées, docking, suivi GPS corridor",
+    "WMS — Warehouse Management System": "Gestion des stocks entrepôt, traçabilité SKU",
+    "MIT SC0x — Supply Chain Analytics":  "Optimisation distances, calcul ROI carburant & CO₂",
+    "MIT CTL — Demand Forecasting":       "Prévision des flux marchandises par corridor",
+    "ERP Intégration (en cours)":         "Synchronisation commandes / expéditions / facturation",
+}
+
+# Quais initiaux GDIZ
 QUAIS_INITIAL = pd.DataFrame({
-    "Quai":      ["A1",          "A2",  "B1",  "B2"],
-    "Statut":    ["Occupé",      "Libre","Libre","Occupé"],
-    "Camion":    ["RB 1234 BJ",  "—",   "—",   "RB 5678 BJ"],
-    "Opération": ["Déchargement","—",   "—",   "Chargement"],
+    "Quai":      ["A1",              "A2",  "B1",  "B2"],
+    "Statut":    ["Occupé",          "Libre", "Libre", "Occupé"],
+    "Camion":    ["RB 1234 BJ",      "—",   "—",   "RB 5678 BJ"],
+    "Marchand.": ["Ciment Dangote",  "—",   "—",   "Maïs"],
+    "Opération": ["Déchargement",    "—",   "—",   "Chargement"],
 })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # SESSION STATE
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 def init_session():
     if "db_tms" not in st.session_state:
         st.session_state.db_tms = pd.DataFrame([
-            {"ID": "EXP-GDIZ-101", "Article": "Groupe INGCO",  "Position": "Bohicon",    "Statut": "En Transit"},
-            {"ID": "EXP-GDIZ-102", "Article": "Ciment Dangote","Position": "Parakou",    "Statut": "En Transit"},
-            {"ID": "EXP-GDIZ-103", "Article": "Matériel BTP",  "Position": "Malanville", "Statut": "Livré"},
+            {"ID": "EXP-GDIZ-101", "Marchandise": "Groupe électrogène INGCO",
+             "Tonnage (T)": 8.5,  "Position": "Bohicon",                   "Statut": "En Transit",  "Heure MAJ": "08:30"},
+            {"ID": "EXP-GDIZ-102", "Marchandise": "Ciment Dangote",
+             "Tonnage (T)": 30.0, "Position": "Parakou",                   "Statut": "En Transit",  "Heure MAJ": "09:15"},
+            {"ID": "EXP-GDIZ-103", "Marchandise": "Soja",
+             "Tonnage (T)": 25.0, "Position": "Malanville",                "Statut": "Livré",       "Heure MAJ": "06:00"},
+            {"ID": "EXP-GDIZ-104", "Marchandise": "Engrais NPK",
+             "Tonnage (T)": 20.0, "Position": "Usine X · GDIZ (Départ)",   "Statut": "Préparation", "Heure MAJ": "10:00"},
         ])
+    if "db_dock" not in st.session_state:
+        st.session_state.db_dock = pd.DataFrame(
+            columns=["Heure", "Camion", "Marchandise", "Tonnage (T)", "Opération", "Quai"]
+        )
     if "quais" not in st.session_state:
         st.session_state.quais = QUAIS_INITIAL.copy()
     if "docking_log" not in st.session_state:
@@ -233,12 +276,12 @@ def init_session():
 init_session()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # SIDEBAR
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div style="text-align:center; padding:20px 0 10px;">
+    <div style="text-align:center;padding:20px 0 10px;">
         <div style="font-size:36px;">🚛</div>
         <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;margin-top:8px;">TMS Logistics</div>
         <div style="font-size:10px;color:#5a7090;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">Transport Management</div>
@@ -247,66 +290,59 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("**Navigation**")
-    st.page_link("app.py",                      label="🏠 Accueil Hub")
-    st.page_link("pages/1_TMS_Logistics.py",    label="🚛 TMS Logistics", disabled=True)
-    st.page_link("pages/2_WMS_Logistics.py",    label="📦 WMS Logistics")
+    st.page_link("home.py",                  label="🏠 Accueil Hub")
+    st.page_link("pages/1_TMS_Logistics.py", label="🚛 TMS Logistics", disabled=True)
+    st.page_link("pages/2_WMS_Logistics.py", label="🏭 WMS Logistics")
+
+    st.markdown("<hr style='border-color:rgba(255,255,255,0.07);margin:20px 0 14px;'>", unsafe_allow_html=True)
+
+    with st.expander("🧠 Systèmes pilotes"):
+        for nom, desc in SYSTEMES_PILOTAGE.items():
+            st.markdown(f"""
+            <div style="margin-bottom:10px;">
+                <div style="font-size:12px;color:#ffad1f;font-weight:600;">{nom}</div>
+                <div style="font-size:11px;color:#5a7090;margin-top:2px;">{desc}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     st.markdown("""
-    <hr style="border-color:rgba(255,255,255,0.07);margin:20px 0 12px;">
+    <hr style="border-color:rgba(255,255,255,0.07);margin:14px 0;">
     <div style="font-size:11px;color:#3d5570;text-align:center;">
         Référentiel<br><span style="color:#ffad1f;">MIT Center for Transportation & Logistics</span>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # EN-TÊTE PAGE
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.markdown("""
 <div class="page-header">
-    <div class="page-tag">🚛 Transport Management System</div>
+    <div class="page-tag">🚛 Transport Management System · GDIZ</div>
     <h1 class="page-title">TMS <span>Logistics</span></h1>
-    <p class="page-sub">Pilotage & Optimisation · Axe Cotonou – Malanville · Modèles MIT CTL</p>
+    <p class="page-sub">Pilotage & Optimisation · Axe Usine X (GDIZ) → Malanville · Modèles MIT CTL</p>
 </div>
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════
 # MODULE 1 — EFFICACITÉ ÉNERGÉTIQUE & ROI
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown(
-    '<p class="section-title">⛽ Efficacité Énergétique & ROI Social</p>'
-    '<div class="section-bar"></div>',
-    unsafe_allow_html=True
-)
+# ═══════════════════════════════════════════════
+st.markdown('<p class="section-title">⛽ Efficacité Énergétique & ROI Social</p><div class="section-bar"></div>', unsafe_allow_html=True)
 
-with st.expander("⚙️ Paramètres du modèle d'optimisation MIT SC0x", expanded=True):
+with st.expander("⚙️ Paramètres du modèle MIT SC0x", expanded=True):
     col1, col2, col3 = st.columns(3)
     with col1:
-        n_camions = st.number_input(
-            "Flotte (nombre de camions)",
-            min_value=1, max_value=500, value=10, step=1
-        )
+        n_camions  = st.number_input("Flotte (nombre de camions)", min_value=1, max_value=500, value=10, step=1)
     with col2:
-        d_actuelle = st.number_input(
-            "Distance actuelle (km/jour)",
-            min_value=1.0, max_value=2000.0, value=80.0, step=1.0
-        )
-        d_opti = st.number_input(
-            "Distance optimisée (km/jour)",
-            min_value=1.0, max_value=2000.0, value=65.0, step=1.0
-        )
+        d_actuelle = st.number_input("Distance actuelle (km / jour)",   min_value=1.0, max_value=2000.0, value=80.0, step=1.0)
+        d_opti     = st.number_input("Distance optimisée (km / jour)",  min_value=1.0, max_value=2000.0, value=65.0, step=1.0)
     with col3:
-        jours = st.number_input(
-            "Jours d'activité / an",
-            min_value=1, max_value=365, value=300, step=1
-        )
-        conso = st.number_input(
-            "Consommation (L / 100 km)",
-            min_value=1.0, max_value=100.0, value=12.0, step=0.5
-        )
+        jours = st.number_input("Jours d'activité / an",        min_value=1,   max_value=365,    value=300,  step=1)
+        conso = st.number_input("Consommation (L / 100 km)",    min_value=1.0, max_value=100.0,  value=32.0, step=0.5,
+                                help="Valeur typique camion lourd Bénin : 28–35 L/100km")
 
-# --- Calculs ---
+# Validation métier
 if d_opti >= d_actuelle:
     st.warning("⚠️ La distance optimisée doit être inférieure à la distance actuelle pour générer un gain.")
     gain_km_annuel = 0.0
@@ -317,46 +353,41 @@ else:
     economie_fcfa  = gain_km_annuel * (conso / 100) * PRIX_CARBURANT
     co2_evite      = gain_km_annuel * (conso / 100) * CO2_PAR_LITRE
 
-emplois = int(economie_fcfa // SALAIRE_ANNUEL) if economie_fcfa > 0 else 0
-
-# --- KPIs ---
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("💰 Économie annuelle",   f"{economie_fcfa:,.0f} FCFA")
 k2.metric("📏 Distance sauvée",     f"{gain_km_annuel:,.0f} km/an")
 k3.metric("🌿 CO₂ évité",           f"{co2_evite:,.0f} kg")
-k4.metric("👷 Emplois finançables", str(emplois),
-          help=f"Basé sur un salaire annuel de {SALAIRE_ANNUEL:,.0f} FCFA")
+k4.metric("👷 Emplois finançables",
+          f"{int(economie_fcfa // SALAIRE_ANNUEL)}" if economie_fcfa > 0 else "0",
+          help=f"Base : {SALAIRE_ANNUEL:,} FCFA / an / employé")
 
 if economie_fcfa > 0:
     st.success(
         f"✅ L'économie de **{economie_fcfa:,.0f} FCFA/an** peut financer "
-        f"**{emplois} poste(s)** de travail local."
+        f"**{int(economie_fcfa // SALAIRE_ANNUEL)} poste(s)** de travail local."
     )
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════
 # MODULE 2 — GESTION DU DOCKING
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown(
-    '<p class="section-title">🏢 Gestion du Docking — GDIZ</p>'
-    '<div class="section-bar"></div>',
-    unsafe_allow_html=True
-)
+# ═══════════════════════════════════════════════
+st.markdown('<p class="section-title">🏢 Gestion du Docking — Usine X · GDIZ</p><div class="section-bar"></div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns([1, 1.6], gap="large")
 
 with col_left:
-    # ── Formulaire accès quai ──
     with st.form("form_docking", clear_on_submit=True):
-        st.markdown("**Contrôle d'accès quai**")
-        camion_immat = st.text_input("Immatriculation du camion", placeholder="Ex : RB 0000 BJ")
-        flux_op      = st.selectbox("Type d'opération", ["Chargement", "Déchargement"])
-        quai_sel     = st.selectbox("Quai cible", st.session_state.quais["Quai"].tolist())
-        submitted    = st.form_submit_button("✅ Valider l'accès")
+        st.markdown("**Enregistrer une opération**")
+        camion_immat = st.text_input("Immatriculation du camion", placeholder="Ex : RB 1234 BJ")
+        marchand_d   = st.selectbox("Nature de la marchandise", MARCHANDISES, key="march_dock")
+        tonnage_d    = st.number_input("Tonnage (T)", min_value=0.1, max_value=70.0, value=25.0, step=0.5, key="ton_dock")
+        flux_op      = st.radio("Type d'opération", ["Chargement", "Déchargement"], horizontal=True)
+        quai_sel     = st.selectbox("Quai assigné", st.session_state.quais["Quai"].tolist())
+        submitted_d  = st.form_submit_button("✅ Valider l'opération")
 
-    if submitted:
+    if submitted_d:
         if not camion_immat.strip():
             st.error("❌ Veuillez saisir une immatriculation.")
         else:
@@ -364,46 +395,45 @@ with col_left:
             mask = st.session_state.quais["Quai"] == quai_sel
             st.session_state.quais.loc[mask, "Statut"]    = "Occupé"
             st.session_state.quais.loc[mask, "Camion"]    = immat_clean
+            st.session_state.quais.loc[mask, "Marchand."] = marchand_d
             st.session_state.quais.loc[mask, "Opération"] = flux_op
-            st.session_state.docking_log.append(
-                f"✔ {immat_clean} · {flux_op} · Quai {quai_sel}"
+            new_entry = pd.DataFrame([{
+                "Heure":       datetime.now().strftime("%H:%M"),
+                "Camion":      immat_clean,
+                "Marchandise": marchand_d,
+                "Tonnage (T)": tonnage_d,
+                "Opération":   flux_op,
+                "Quai":        quai_sel,
+            }])
+            st.session_state.db_dock = pd.concat(
+                [st.session_state.db_dock, new_entry], ignore_index=True
             )
-            st.success(f"Accès autorisé : **{immat_clean}** → Quai **{quai_sel}**")
+            st.session_state.docking_log.append(
+                f"✔ {immat_clean} · {marchand_d} · {flux_op} · Quai {quai_sel}"
+            )
+            st.success(f"Opération validée : **{immat_clean}** → Quai **{quai_sel}**")
 
-    # ── Libérer un quai ──
     st.markdown("**Libérer un quai**")
-    quai_lib = st.selectbox(
-        "Quai à libérer",
-        st.session_state.quais["Quai"].tolist(),
-        key="quai_lib_select"
-    )
+    quai_lib = st.selectbox("Quai à libérer", st.session_state.quais["Quai"].tolist(), key="lib_quai")
     if st.button("🔓 Libérer le quai"):
         mask = st.session_state.quais["Quai"] == quai_lib
-        st.session_state.quais.loc[mask, "Statut"]    = "Libre"
-        st.session_state.quais.loc[mask, "Camion"]    = "—"
-        st.session_state.quais.loc[mask, "Opération"] = "—"
+        st.session_state.quais.loc[mask, ["Statut", "Camion", "Marchand.", "Opération"]] = ["Libre", "—", "—", "—"]
         st.success(f"Quai **{quai_lib}** libéré.")
 
 with col_right:
     st.markdown("**État des quais en temps réel**")
-
     rows_html = ""
     for _, row in st.session_state.quais.iterrows():
         if row["Statut"] == "Occupé":
-            badge = (
-                '<span style="background:rgba(255,80,80,0.15);color:#ff5050;'
-                'font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">🔴 Occupé</span>'
-            )
+            badge = '<span style="background:rgba(255,80,80,0.15);color:#ff5050;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">🔴 Occupé</span>'
         else:
-            badge = (
-                '<span style="background:rgba(0,196,167,0.15);color:#00c4a7;'
-                'font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">🟢 Libre</span>'
-            )
+            badge = '<span style="background:rgba(0,196,167,0.15);color:#00c4a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;">🟢 Libre</span>'
         rows_html += f"""
         <tr>
             <td><strong>{row['Quai']}</strong></td>
             <td>{badge}</td>
             <td style="color:#8fa3c0;">{row['Camion']}</td>
+            <td style="color:#8fa3c0;">{row['Marchand.']}</td>
             <td style="color:#8fa3c0;">{row['Opération']}</td>
         </tr>"""
 
@@ -411,65 +441,74 @@ with col_right:
     <div class="card" style="padding:20px;">
         <table class="quai-table">
             <thead><tr>
-                <th>Quai</th><th>Statut</th><th>Camion</th><th>Opération</th>
+                <th>Quai</th><th>Statut</th><th>Camion</th><th>Marchandise</th><th>Opération</th>
             </tr></thead>
             <tbody>{rows_html}</tbody>
         </table>
     </div>
     """, unsafe_allow_html=True)
 
-    # Journal des accès (5 derniers)
+    if not st.session_state.db_dock.empty:
+        t1, t2 = st.columns(2)
+        t1.metric("Tonnage journalier",  f"{st.session_state.db_dock['Tonnage (T)'].sum():,.1f} T")
+        t2.metric("Opérations du jour",  len(st.session_state.db_dock))
+        st.markdown("**5 dernières opérations**")
+        st.dataframe(
+            st.session_state.db_dock.tail(5)[["Heure", "Camion", "Marchandise", "Tonnage (T)", "Opération", "Quai"]],
+            use_container_width=True,
+        )
+
     if st.session_state.docking_log:
         st.markdown("**Journal des accès**")
         for log in reversed(st.session_state.docking_log[-5:]):
             st.markdown(
                 f"<div style='font-size:12px;color:#7a92b0;padding:4px 0;"
                 f"border-bottom:1px solid rgba(255,255,255,0.05);'>{log}</div>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════
 # MODULE 3 — TRACKING DES EXPÉDITIONS
-# ═══════════════════════════════════════════════════════════════════════════════
-st.markdown(
-    '<p class="section-title">📦 Suivi des Expéditions</p>'
-    '<div class="section-bar"></div>',
-    unsafe_allow_html=True
-)
+# ═══════════════════════════════════════════════
+st.markdown('<p class="section-title">📦 Suivi des Expéditions</p><div class="section-bar"></div>', unsafe_allow_html=True)
 
 col_form, col_info = st.columns([1, 1.6], gap="large")
 
 with col_form:
     with st.form("form_tracking", clear_on_submit=True):
-        st.markdown("**Mettre à jour une expédition**")
-        id_exp   = st.text_input("ID Expédition", placeholder="Ex : EXP-GDIZ-104")
-        article  = st.text_input("Article / Marchandise", placeholder="Ex : Ciment Dangote")
-        position = st.selectbox("Dernière position constatée", LISTE_VILLES)
-        statut   = st.selectbox("Statut", STATUTS)
-        submit_t = st.form_submit_button("📍 Actualiser le tracking")
+        st.markdown("**Enregistrer / mettre à jour**")
+        id_exp     = st.text_input("Référence expédition", placeholder="Ex : EXP-GDIZ-105")
+        marchand_t = st.selectbox("Marchandise", MARCHANDISES, key="march_track")
+        tonnage_t  = st.number_input("Tonnage (T)", min_value=0.1, max_value=70.0, value=20.0, step=0.5, key="ton_track")
+        position   = st.selectbox("Dernière position constatée", LISTE_VILLES)
+        statut     = st.selectbox("Statut", STATUTS)
+        submit_t   = st.form_submit_button("📍 Actualiser le tracking")
 
     if submit_t:
         if not id_exp.strip():
-            st.error("❌ Veuillez saisir un ID d'expédition.")
-        elif not article.strip():
-            st.error("❌ Veuillez saisir le nom de l'article.")
+            st.error("❌ Veuillez saisir une référence d'expédition.")
         else:
             id_clean = id_exp.strip().upper()
+            heure    = datetime.now().strftime("%H:%M")
             if id_clean in st.session_state.db_tms["ID"].values:
                 mask = st.session_state.db_tms["ID"] == id_clean
-                st.session_state.db_tms.loc[mask, "Article"]  = article.strip()
-                st.session_state.db_tms.loc[mask, "Position"] = position
-                st.session_state.db_tms.loc[mask, "Statut"]   = statut
+                st.session_state.db_tms.loc[mask, "Marchandise"] = marchand_t
+                st.session_state.db_tms.loc[mask, "Tonnage (T)"] = tonnage_t
+                st.session_state.db_tms.loc[mask, "Position"]    = position
+                st.session_state.db_tms.loc[mask, "Statut"]      = statut
+                st.session_state.db_tms.loc[mask, "Heure MAJ"]   = heure
                 st.success(f"✅ Expédition **{id_clean}** mise à jour.")
             else:
                 new_row = pd.DataFrame([{
-                    "ID":       id_clean,
-                    "Article":  article.strip(),
-                    "Position": position,
-                    "Statut":   statut,
+                    "ID":          id_clean,
+                    "Marchandise": marchand_t,
+                    "Tonnage (T)": tonnage_t,
+                    "Position":    position,
+                    "Statut":      statut,
+                    "Heure MAJ":   heure,
                 }])
                 st.session_state.db_tms = pd.concat(
                     [st.session_state.db_tms, new_row], ignore_index=True
@@ -477,43 +516,38 @@ with col_form:
                 st.success(f"✅ Expédition **{id_clean}** ajoutée.")
 
 with col_info:
-    df_transit = st.session_state.db_tms[
-        st.session_state.db_tms["Statut"] == "En Transit"
-    ]
+    df_transit = st.session_state.db_tms[st.session_state.db_tms["Statut"] == "En Transit"]
     if not df_transit.empty:
-        derniere          = df_transit.iloc[-1]
-        position_actuelle = derniere["Position"]
-        km_faits          = VILLES_BENIN.get(position_actuelle, 0)
-        progression       = min(km_faits / DISTANCE_MAX, 1.0)
+        derniere = df_transit.iloc[-1]
+        pos_act  = derniere["Position"]
+        km_faits = VILLES_BENIN.get(pos_act, 0)
+        prog     = min(km_faits / DISTANCE_MAX, 1.0)
 
         st.markdown(f"""
         <div class="card">
-            <div style="font-size:11px;color:#5a7090;letter-spacing:1.5px;
-                        text-transform:uppercase;margin-bottom:8px;">
+            <div style="font-size:11px;color:#5a7090;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">
                 Dernière expédition en transit
             </div>
-            <div style="font-family:'Syne',sans-serif;font-size:20px;
-                        font-weight:700;color:#fff;margin-bottom:4px;">
+            <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">
                 {derniere['ID']}
             </div>
-            <div style="font-size:13px;color:#8fa3c0;margin-bottom:16px;">
-                {derniere['Article']}
+            <div style="font-size:13px;color:#8fa3c0;margin-bottom:4px;">{derniere['Marchandise']}</div>
+            <div style="font-size:12px;color:#5a7090;margin-bottom:14px;">
+                {derniere['Tonnage (T)']} T &nbsp;·&nbsp; MAJ {derniere['Heure MAJ']}
             </div>
             <div style="font-size:13px;color:#c8d8ec;">
-                📍 <strong>{position_actuelle}</strong>
-                &nbsp;·&nbsp; {km_faits} km / {DISTANCE_MAX} km
+                📍 <strong>{pos_act}</strong> &nbsp;·&nbsp; {km_faits} km / {DISTANCE_MAX} km
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.progress(progression)
-        st.caption(f"Progression vers Malanville : {progression * 100:.1f}%")
+        st.progress(prog)
+        st.caption(f"Progression vers Malanville : {prog * 100:.1f}%")
     else:
         st.info("Aucune expédition en transit actuellement.")
 
-# ── Dashboard tableau ──
+# Dashboard tableau
 st.markdown("**📋 Dashboard opérationnel**")
-
 filtre = st.selectbox("Filtrer par statut", ["Tous"] + STATUTS, key="filtre_statut")
 df_display = st.session_state.db_tms.copy()
 if filtre != "Tous":
@@ -524,24 +558,34 @@ if df_display.empty:
 else:
     st.dataframe(df_display.reset_index(drop=True), use_container_width=True)
 
-# ── Statistiques rapides ──
-total      = len(st.session_state.db_tms)
-en_transit = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "En Transit"])
-livres     = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "Livré"])
-incidents  = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "Incident"])
+# Statistiques rapides
+total         = len(st.session_state.db_tms)
+en_transit    = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "En Transit"])
+livres        = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "Livré"])
+incidents     = len(st.session_state.db_tms[st.session_state.db_tms["Statut"] == "Incident"])
+tonnage_total = st.session_state.db_tms["Tonnage (T)"].sum()
 
-s1, s2, s3, s4 = st.columns(4)
+s1, s2, s3, s4, s5 = st.columns(5)
 s1.metric("Total expéditions", total)
 s2.metric("En Transit",        en_transit)
 s3.metric("Livrées",           livres)
 s4.metric("Incidents",         incidents)
+s5.metric("Tonnage total",     f"{tonnage_total:,.1f} T")
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 # FOOTER
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────
 st.markdown("""
-<div style="display:flex;justify-content:space-between;align-items:center;
-            f
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <span style="font-size:12px;color:#3d5570;">
+        © 2025 <span style="color:#ffad1f;font-weight:500;">West Africa Logistics Hub</span> · TMS Module
+    </span>
+    <span style="font-size:12px;color:#3d5570;">
+        Propulsé par <span style="color:#ffad1f;font-weight:500;">Streamlit</span>
+        · Référentiel <span style="color:#ffad1f;font-weight:500;">MIT CTL</span>
+    </span>
+</div>
+""", unsafe_allow_html=True)
