@@ -1,0 +1,14 @@
+# Données confidentielles
+data/raw/*
+data/processed/*
+
+# Fichiers Python temporaires
+__pycache__/
+*.pyc
+
+# Environnement virtuel
+venv/
+.env
+
+# Fichiers système
+.DS_Store
