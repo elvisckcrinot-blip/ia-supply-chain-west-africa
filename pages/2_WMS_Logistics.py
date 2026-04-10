@@ -13,7 +13,7 @@ with st.sidebar:
     hausse = st.slider("Augmentation demande (%)", 0, 100, 0) / 100
     retard = st.number_input("Retard logistique (Jours)", value=0)
 
-# 2. DONNÉES D'INVENTAIRE
+# 2. DONNÉES D'INVENTAIRE (Données diversifiées pour forcer la segmentation ABC)
 data_wms = {
     'SKU': ['REF-MAI-01', 'REF-COT-02', 'REF-SOJ-03', 'REF-CAJ-04', 'REF-CIM-05'],
     'Désignation': ['Maïs Grain', 'Coton Fibre', 'Soja Bio', 'Cajou Brut', 'Ciment Sac'],
@@ -23,17 +23,21 @@ data_wms = {
 }
 df = pd.DataFrame(data_wms)
 
-# --- 3. LOGIQUE ABC ---
+# --- 3. INTELLIGENCE ABC (CORRIGÉE) ---
 df['Valeur_Stock_Total'] = df['Stock_Physique'] * df['Prix']
-df = df.sort_values(by='Valeur_Stock_Total', ascending=False)
+
+# TRI CRITIQUE : Du plus cher au moins cher pour respecter la loi de Pareto
+df = df.sort_values(by='Valeur_Stock_Total', ascending=False).reset_index(drop=True)
+
 df['Cumul_Valeur'] = df['Valeur_Stock_Total'].cumsum()
 total_valeur = df['Valeur_Stock_Total'].sum()
 df['Pct_Cumul'] = (df['Cumul_Valeur'] / total_valeur) * 100
 
+# Fonction de classification stricte
 def classifier_abc(pct):
-    if pct <= 80: return 'A', 0.98
-    elif pct <= 95: return 'B', 0.90
-    else: return 'C', 0.85
+    if pct <= 80: return 'A', 0.98  # Produits majeurs
+    elif pct <= 95: return 'B', 0.90 # Produits intermédiaires
+    else: return 'C', 0.85          # Produits mineurs
 
 df[['Classe_ABC', 'Taux_Satisfaction']] = df['Pct_Cumul'].apply(lambda x: pd.Series(classifier_abc(x)))
 
@@ -56,14 +60,13 @@ k1.metric("Valeur Inventaire", f"{total_valeur:,.0f} FCFA")
 k2.metric("Valeur en Risque", f"{df['Valeur_Risque'].sum():,.0f} FCFA", delta_color="inverse")
 k3.metric("Besoin Réappro", len(df[df['Stock_Physique'] <= df['Seuil_Alerte']]))
 
-# 6. TABLEAU DE BORD (CORRECTION DE L'ERREUR)
+# 6. TABLEAU DE BORD
 st.subheader("📋 État Global de l'Inventaire & Analyse Stratégique")
 
 def style_abc(val):
     color = '#ff4b4b' if val == 'A' else ('#ffa500' if val == 'B' else '#008000')
     return f'color: {color}; font-weight: bold'
 
-# Utilisation de .map au lieu de .applymap pour la compatibilité Pandas 2.0+
 st.dataframe(
     df[['Classe_ABC', 'SKU', 'Désignation', 'Stock_Physique', 'Couverture_Jours', 'Seuil_Alerte', 'Statut']]
     .style.map(style_abc, subset=['Classe_ABC']),
@@ -80,9 +83,9 @@ if not df_reap.empty:
 else:
     st.success("✅ Niveaux de stock optimaux.")
 
-# 8. VISUALISATION
+# 8. VISUALISATION (MULTI-COULEURS)
 fig_pie = px.pie(df, values='Valeur_Stock_Total', names='Classe_ABC', 
-                 title="Répartition de la Valeur (ABC)",
+                 title="Répartition de la Valeur (Pareto ABC)",
                  color='Classe_ABC',
                  color_discrete_map={'A':'#ff4b4b', 'B':'#ffa500', 'C':'#008000'})
 st.plotly_chart(fig_pie, use_container_width=True)
