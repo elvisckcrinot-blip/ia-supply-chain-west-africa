@@ -1,35 +1,28 @@
 import streamlit as st
 
-# 1. CONFIGURATION DE LA PAGE (Doit être la toute première ligne)
-st.set_page_config(
-    page_title="Hub Logistique Afrique de l'Ouest",
-    page_icon="🌍",
-    layout="wide"
-)
+# 1. CONFIGURATION DE LA PAGE
+st.set_page_config(page_title="West Africa Logistics Hub", layout="wide", page_icon="🌍")
 
-# 2. DESIGN DE LA PAGE D'ACCUEIL
-st.title("🌍 Plateforme Logistique Intégrée")
+st.title("🌍 West Africa Logistics Hub")
 st.markdown("---")
 
 st.header("Bienvenue dans votre interface de pilotage")
-st.write("Cette application centralise vos solutions logistiques pour le Bénin.")
+st.write("Cette plateforme centralise vos solutions technologiques pour la Supply Chain au Bénin.")
 
-# 3. PANNEAU D'ORIENTATION
+# 2. PANNEAU DE NAVIGATION
 col1, col2 = st.columns(2)
 
 with col1:
-    st.info("### 🚛 GDIZ Smart Docking")
-    st.write("Gestion des flux de camions et optimisation des accès usines en temps réel.")
-    if st.button("Accéder au Docking"):
-        st.switch_page("app.py")
+    st.info("### 🚛 TMS Logistics")
+    st.write("Transport Management System : Docking, Optimisation du carburant et Suivi en temps réel.")
+    st.write("👈 *Cliquez sur 'TMS Logistics' dans le menu à gauche*")
 
 with col2:
-    st.success("### 📦 INGCO BÉNIN")
-    st.write("Optimisation des stocks (500 articles), gestion des conteneurs et calculs MIT.")
-    st.write("👈 *Cliquez sur 'INGCO' dans le menu à gauche*")
+    st.success("### 📦 WMS Logistics")
+    st.write("Warehouse Management System : Gestion d'entrepôt, Simulation de scénarios et Commandes auto.")
+    st.write("👈 *Cliquez sur 'WMS Logistics' dans le menu à gauche*")
 
-# 4. MESSAGE D'AIDE
-st.sidebar.success("Sélectionnez un module ci-dessus")
+# 3. BARRE LATÉRALE
+st.sidebar.success("Sélectionnez un module pour commencer")
 st.sidebar.markdown("---")
-st.sidebar.write("👤 Utilisateur : Elvis")
-      
+st.sidebar.write("Expertise : Modèles MIT CTL")
