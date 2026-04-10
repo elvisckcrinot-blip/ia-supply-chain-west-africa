@@ -1,28 +1,48 @@
 import streamlit as st
 
 # 1. CONFIGURATION DE LA PAGE
-st.set_page_config(page_title="West Africa Logistics Hub", layout="wide", page_icon="🌍")
+st.set_page_config(
+    page_title="West Africa Logistics Hub",
+    page_icon="🌍",
+    layout="wide"
+)
 
+# 2. ACCUEIL ET TITRE
 st.title("🌍 West Africa Logistics Hub")
 st.markdown("---")
 
 st.header("Bienvenue dans votre interface de pilotage")
 st.write("Cette plateforme centralise vos solutions technologiques pour la Supply Chain au Bénin.")
 
-# 2. PANNEAU DE NAVIGATION
+# 3. PANNEAU DE NAVIGATION (TMS & WMS)
 col1, col2 = st.columns(2)
 
 with col1:
     st.info("### 🚛 TMS Logistics")
-    st.write("Transport Management System : Docking, Optimisation du carburant et Suivi en temps réel.")
-    st.write("👈 *Cliquez sur 'TMS Logistics' dans le menu à gauche*")
+    st.write("**Transport Management System**")
+    st.write("- Gestion du Docking (GDIZ)\n- Optimisation du carburant\n- Suivi des marchandises (Tracking)")
+    st.write("👈 *Accédez au module dans le menu à gauche*")
 
 with col2:
     st.success("### 📦 WMS Logistics")
-    st.write("Warehouse Management System : Gestion d'entrepôt, Simulation de scénarios et Commandes auto.")
-    st.write("👈 *Cliquez sur 'WMS Logistics' dans le menu à gauche*")
+    st.write("**Warehouse Management System**")
+    st.write("- Gestion d'entrepôt\n- Simulation de scénarios stratégiques\n- Plan de réapprovisionnement")
+    st.write("👈 *Accédez au module dans le menu à gauche*")
 
-# 3. BARRE LATÉRALE
-st.sidebar.success("Sélectionnez un module pour commencer")
+# 4. BARRE LATÉRALE (SIDEBAR)
+st.sidebar.title("Navigation")
+st.sidebar.success("Ouvrez le menu '>>' pour changer de module.")
 st.sidebar.markdown("---")
-st.sidebar.write("Expertise : Modèles MIT CTL")
+st.sidebar.write("👤 **Utilisateur :** Elvis")
+st.sidebar.write("🎓 **Expertise :** MIT CTL Models")
+
+# 5. NOTE STRATÉGIQUE (L'UPPERCUT)
+st.markdown("---")
+with st.expander("🔍 Pourquoi cette solution est-elle unique ?"):
+    st.write("""
+    Contrairement aux logiciels classiques (ERP/WMS standards), cette plateforme intègre :
+    1. **L'Optimisation Mathématique :** Modèles du MIT pour réduire les distances de 15% à 20%.
+    2. **Le ROI Social :** Chaque gain de carburant est converti en capacité d'embauche.
+    3. **La Résilience :** Simulateur de crises (retards ports, hausses demande) pour protéger votre CA.
+    """)
+    
