@@ -21,22 +21,19 @@ st.markdown("""
 if 'historique_docking' not in st.session_state:
     st.session_state.historique_docking = []
 
-# --- 3. INTERFACE ---
+# --- 3. INTERFACE PRINCIPALE ---
 st.markdown('<h1 class="main-title">🚛 Pilotage des Opérations TMS</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["💰 Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
 
-# --- ONGLET ROI (Format de ton image) ---
+# --- ONGLET 1 : ROI (Format Image Configuration) ---
 with tab1:
     st.write("### Analyse de Rentabilité Annuelle (360 jours)")
-    
     col_input, col_result = st.columns([1, 1])
 
     with col_input:
-        # Bloc Bleu "Configuration de la Flotte" comme sur ton image
         st.info("Configuration de la Flotte")
-        
         tarif_client = st.number_input("Tarif facturé au client (FCFA/trajet)", value=650000, step=5000)
         nbre_camions = st.slider("Nombre de camions déployés par jour", 1, 50, 15)
         dist_axe = st.number_input("Distance Axe (km)", value=720)
@@ -45,13 +42,10 @@ with tab1:
         charges_fixes = st.number_input("Charges fixes/trajet (FCFA)", value=85000)
 
     with col_result:
-        # Calculs
         cout_u, co2 = calcul_cout_transport(dist_axe, conso_moy, prix_diesel, charges_fixes)
         gain_annuel = calcul_rentabilite_flotte(cout_u, tarif_client, nbre_camions)
         
         st.write("### Résultats Stratégiques")
-        
-        # Affichage du Profit Net en grand format orange
         valeur_f = f"{gain_annuel:,}".replace(",", " ")
         st.markdown(f"""
             <div class="roi-card">
@@ -60,12 +54,11 @@ with tab1:
                 <div style="color: #5fc385; font-size: 12px; margin-top:5px;">✓ Basé sur 360 jours d'exploitation</div>
             </div>
         """, unsafe_allow_html=True)
-        
         st.write("")
         st.metric("Coût de revient / Trajet", f"{cout_u:,} FCFA".replace(",", " "))
         st.metric("Empreinte CO2 / Trajet", f"{co2} kg")
 
-# --- ONGLET DOCKING ---
+# --- ONGLET 2 : DOCKING ---
 with tab2:
     st.write("### Registre de Docking")
     with st.form("docking_form"):
@@ -86,10 +79,48 @@ with tab2:
     if st.session_state.historique_docking:
         st.table(pd.DataFrame(st.session_state.historique_docking))
 
-# --- ONGLET TRACKING ---
+# --- ONGLET 3 : TRACKING (Version Visuelle Améliorée) ---
 with tab3:
-    st.write("### Suivi Corridor")
-    st.info("📍 Point de contrôle actuel : Glo-Djigbé | Statut : En transit")
+    st.write("### Suivi Temps Réel de l'Expédition")
+    
+    villes = ["Cotonou", "Porto-Novo", "Ouidah", "Seme-Kodji", "Abomey-Calavi", "Glo-Djigbé", 
+              "Allada", "Houègbo", "Cana", "Zogbodomey", "Bohicon", "Abomey", "Dassa", 
+              "Glazoue", "Savalou", "Savè", "Parakou", "Natitingou", "Djougou", "Malanville"]
+    
+    position_actuelle = st.selectbox("Position actuelle du convoi", villes, index=0)
+    
+    st.write("Statut de livraison")
+    statut_exp = st.select_slider(
+        "Statut_Slider",
+        options=["En transit", "Incident", "Livré"],
+        value="En transit",
+        label_visibility="collapsed"
+    )
+    
+    couleurs = {"En transit": "#ffad1f", "Incident": "#ff4b4b", "Livré": "#00cc66"}
+    couleur_statut = couleurs.get(statut_exp, "#ffad1f")
+    
+    st.markdown(f"<span style='color:{couleur_statut}; font-weight:bold;'>{statut_exp}</span>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+        <div style="
+            background: rgba(255,255,255,0.05); 
+            border-left: 5px solid {couleur_statut}; 
+            border-radius: 15px; 
+            padding: 30px; 
+            margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        ">
+            <h2 style="font-family:'Syne', sans-serif; color: #fff; margin-bottom: 15px;">
+                Convoi {immat if 'immat' in locals() else 'RB 0001'}
+            </h2>
+            <p style="font-size: 18px; color: #e8edf5; margin: 5px 0;">
+                📍 Localisation : <b style="color:#ffad1f;">{position_actuelle}</b>
+            </p>
+            <p style="font-size: 16px; color: #7a92b0; margin: 5px 0;">
+                État : <span style="color:{couleur_statut}; font-weight:bold;">{statut_exp.upper()}</span>
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
 st.sidebar.info("Axe stratégique : GDIZ → Malanville")
-    
