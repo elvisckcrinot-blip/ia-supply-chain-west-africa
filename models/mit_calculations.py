@@ -21,9 +21,6 @@ def calcul_point_de_commande(demande_moyenne, delai_fournisseur, stock_securite)
 def analyse_pareto_abc(df, colonne_valeur):
     """
     Segmentation ABC : Classe les produits par importance financière.
-    A : 80% de la valeur (20% des produits)
-    B : 15% de la valeur (30% des produits)
-    C : 5% de la valeur (50% des produits)
     """
     df = df.sort_values(by=colonne_valeur, ascending=False)
     df['cum_sum'] = df[colonne_valeur].cumsum()
@@ -36,10 +33,10 @@ def analyse_pareto_abc(df, colonne_valeur):
         
     df['Classe_ABC'] = df['cum_perc'].apply(assign_abc)
     return df
-  def calcul_cout_transport(distance, consommation_moyenne, prix_carburant, cout_fixe):
+
+def calcul_cout_transport(distance, consommation_moyenne, prix_carburant, cout_fixe):
     """
     Calcule le coût total d'un trajet et l'empreinte CO2.
-    Base : 1L de diesel ≈ 2.68 kg de CO2
     """
     carburant_total = (distance / 100) * consommation_moyenne
     cout_carburant = carburant_total * prix_carburant
@@ -47,4 +44,4 @@ def analyse_pareto_abc(df, colonne_valeur):
     emissions_co2 = carburant_total * 2.68
     
     return round(cout_total, 2), round(emissions_co2, 2)
-        
+    
