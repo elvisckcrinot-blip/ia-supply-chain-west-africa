@@ -5,93 +5,91 @@ import datetime
 import pandas as pd
 import io
 
+# --- 1. CONFIGURATION ET STYLE ---
 st.set_page_config(page_title="TMS Intelligence · Bénin", layout="wide")
 
-# --- INITIALISATION DE L'HISTORIQUE ---
+st.markdown("""
+<style>
+    @import url('https://googleapis.com');
+    .main-title { font-family: 'Syne', sans-serif; color: #ffad1f; font-size: 38px; font-weight: 800; }
+    .roi-card { background: rgba(255,173,31,0.05); border: 1px solid rgba(255,173,31,0.2); border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px; }
+    .roi-val { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #ffad1f; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- 2. INITIALISATION ---
 if 'historique_docking' not in st.session_state:
     st.session_state.historique_docking = []
 
-# --- FONCTION GÉNÉRATION PDF (Bon de Docking) ---
-def create_pdf(immat, marchandise, quai, type_op):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(190, 10, "WEST AFRICA LOGISTICS HUB - GDIZ", ln=True, align="C")
-    pdf.ln(10)
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(190, 10, f"Bon généré le : {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True)
-    pdf.cell(190, 10, f"Immatriculation : {immat}", ln=True)
-    pdf.cell(190, 10, f"Marchandise : {marchandise}", ln=True)
-    pdf.cell(190, 10, f"Quai : {quai}", ln=True)
-    pdf.cell(190, 10, f"Opération : {type_op}", ln=True)
-    return pdf.output(dest="S").encode("latin-1")
-
-# --- FONCTION EXPORT EXCEL (Récapitulatif) ---
-def to_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Docking_Journée')
-    return output.getvalue()
-
-st.markdown('<h1 style="font-family:Syne; color:#ffad1f;">🚛 Pilotage des Opérations TMS</h1>', unsafe_allow_html=True)
+# --- 3. INTERFACE ---
+st.markdown('<h1 class="main-title">🚛 Pilotage des Opérations TMS</h1>', unsafe_allow_html=True)
+st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["💰 Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
 
-# --- ONGLET 1 : ROI ---
+# --- ONGLET ROI (Format de ton image) ---
 with tab1:
-    st.write("### Rentabilité Flotte (360 jours)")
-    c1, c2 = st.columns(2)
-    with c1:
-        tarif = st.number_input("Tarif Client (FCFA)", value=650000)
-        nbre = st.slider("Camions / jour", 1, 50, 15)
-        cout_u, co2 = calcul_cout_transport(720, 35, 700, 85000)
-    with c2:
-        gain = calcul_rentabilite_flotte(cout_u, tarif, nbre)
-        st.metric("Profit Net Annuel", f"{gain:,} FCFA".replace(",", " "))
+    st.write("### Analyse de Rentabilité Annuelle (360 jours)")
+    
+    col_input, col_result = st.columns([1, 1])
 
-# --- ONGLET 2 : DOCKING & TABLEAU ---
+    with col_input:
+        # Bloc Bleu "Configuration de la Flotte" comme sur ton image
+        st.info("Configuration de la Flotte")
+        
+        tarif_client = st.number_input("Tarif facturé au client (FCFA/trajet)", value=650000, step=5000)
+        nbre_camions = st.slider("Nombre de camions déployés par jour", 1, 50, 15)
+        dist_axe = st.number_input("Distance Axe (km)", value=720)
+        conso_moy = st.number_input("Consommation moyenne (L/100km)", value=35)
+        prix_diesel = st.number_input("Prix Diesel (FCFA/L)", value=700)
+        charges_fixes = st.number_input("Charges fixes/trajet (FCFA)", value=85000)
+
+    with col_result:
+        # Calculs
+        cout_u, co2 = calcul_cout_transport(dist_axe, conso_moy, prix_diesel, charges_fixes)
+        gain_annuel = calcul_rentabilite_flotte(cout_u, tarif_client, nbre_camions)
+        
+        st.write("### Résultats Stratégiques")
+        
+        # Affichage du Profit Net en grand format orange
+        valeur_f = f"{gain_annuel:,}".replace(",", " ")
+        st.markdown(f"""
+            <div class="roi-card">
+                <div style="color: #7a92b0; font-size: 14px;">PROFIT NET ANNUEL ESTIMÉ</div>
+                <div class="roi-val">{valeur_f} FCFA</div>
+                <div style="color: #5fc385; font-size: 12px; margin-top:5px;">✓ Basé sur 360 jours d'exploitation</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.write("")
+        st.metric("Coût de revient / Trajet", f"{cout_u:,} FCFA".replace(",", " "))
+        st.metric("Empreinte CO2 / Trajet", f"{co2} kg")
+
+# --- ONGLET DOCKING ---
 with tab2:
     st.write("### Registre de Docking")
     with st.form("docking_form"):
-        col_d1, col_d2, col_d3 = st.columns(3)
-        immat = col_d1.text_input("Immatriculation", "RB 0001")
-        marchandise = col_d2.selectbox("Marchandise", ["Maïs", "Coton", "Soja", "Cajou", "Tourteau", "Ciment", "Gaz"])
-        quai = col_d3.selectbox("Quai", [f"Quai {l}" for l in "ABCDEFG"])
-        type_op = st.radio("Opération", ["Chargement", "Déchargement"], horizontal=True)
-        submitted = st.form_submit_button("Valider l'affectation")
-        
-    if submitted:
-        # Enregistrement
+        c1, c2, c3 = st.columns(3)
+        immat = c1.text_input("Immatriculation", "RB 0001")
+        marchandise = c2.selectbox("Marchandise", ["Maïs", "Coton", "Soja", "Cajou", "Tourteau", "Ciment", "Gaz"])
+        quai = c3.selectbox("Affectation Quai", [f"Quai {l}" for l in "ABCDEFG"])
+        op = st.radio("Opération", ["Chargement", "Déchargement"], horizontal=True)
+        submit = st.form_submit_button("VALIDER L'AFFECTATION")
+
+    if submit:
         st.session_state.historique_docking.insert(0, {
-            "Date": datetime.datetime.now().strftime("%d/%m/%Y"),
             "Heure": datetime.datetime.now().strftime("%H:%M"),
-            "Immatriculation": immat,
-            "Marchandise": marchandise,
-            "Quai": quai,
-            "Type": type_op
+            "Immatriculation": immat, "Marchandise": marchandise, "Quai": quai, "Type": op
         })
-        st.success("Camion enregistré avec succès.")
+        st.success("Affectation enregistrée.")
 
-    # Affichage du tableau et Export Excel
     if st.session_state.historique_docking:
-        df_hist = pd.DataFrame(st.session_state.historique_docking)
-        st.write("### 📋 Historique de la session")
-        st.dataframe(df_hist, use_container_width=True)
-        
-        # Boutons de téléchargement
-        btn_col1, btn_col2 = st.columns(2)
-        with btn_col1:
-            pdf_data = create_pdf(immat, marchandise, quai, type_op)
-            st.download_button("📄 Télécharger le DERNIER Bon (PDF)", data=pdf_data, file_name=f"Bon_{immat}.pdf")
-        with btn_col2:
-            excel_data = to_excel(df_hist)
-            st.download_button("Excel 📥 Exporter tout l'historique (Excel)", data=excel_data, file_name="recap_docking_gdiz.xlsx")
+        st.table(pd.DataFrame(st.session_state.historique_docking))
 
-# --- ONGLET 3 : TRACKING ---
+# --- ONGLET TRACKING ---
 with tab3:
-    villes = ["Cotonou", "Porto-Novo", "Glo-Djigbé", "Bohicon", "Dassa", "Parakou", "Malanville"]
-    c_t1, c_t2 = st.columns(2)
-    pos = c_t1.selectbox("Position actuelle", villes)
-    status = c_t2.select_slider("Statut", options=["En transit", "Incident", "Livré"])
-    st.info(f"📍 Point de contrôle : {pos} | Statut : {status}")
+    st.write("### Suivi Corridor")
+    st.info("📍 Point de contrôle actuel : Glo-Djigbé | Statut : En transit")
+
+st.sidebar.info("Axe stratégique : GDIZ → Malanville")
     
