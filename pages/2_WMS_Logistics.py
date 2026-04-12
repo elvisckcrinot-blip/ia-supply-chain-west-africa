@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 from models.mit_calculations import calcul_wilson_eoq, analyse_pareto_abc
-# Importation enrichie du moteur IA
-from models.ai_engine import predict_safety_stock, classify_abc, analyse_six_sigma
+# Importation du moteur IA
+from models.ai_engine import predict_safety_stock, classify_abc
 import io
 
 # --- 1. CONFIGURATION ET STYLE ---
@@ -83,7 +83,7 @@ with tab2:
         </div>
     """, unsafe_allow_html=True)
 
-# --- 3. SECTION : INTELLIGENCE DE STOCK (IA ENGINE) ---
+# --- 3. NOUVELLE SECTION : INTELLIGENCE DE STOCK (IA ENGINE) ---
 st.markdown("---")
 st.markdown("### 🤖 Intelligence de Stock (Moteur IA)")
 
@@ -91,17 +91,20 @@ col_ia1, col_ia2 = st.columns(2)
 
 with col_ia1:
     st.info("Calcul du Stock de Sécurité (MIT SC0x)")
+    # Paramètres pour le calcul IA
     service_lvl = st.select_slider("Niveau de Service cible", options=[0.85, 0.90, 0.95, 0.99], value=0.95)
     sigma = st.number_input("Variabilité de la demande (Écart-type)", value=15, min_value=1)
     lead_time = st.number_input("Délai de réapprovisionnement (Jours)", value=5, min_value=1)
     
     if st.button("Calculer le Stock de Sécurité"):
+        # Appel de la fonction de ai_engine.py
         ss_recommande = predict_safety_stock(service_lvl, sigma, lead_time)
         st.success(f"Stock de Sécurité Recommandé : **{ss_recommande} unités**")
-        st.caption("Aide à prévenir les ruptures de stock à la GDIZ en cas d'imprévus.")
+        st.caption("Ce calcul aide à prévenir les ruptures de stock à la GDIZ en cas d'imprévus.")
 
 with col_ia2:
     st.info("Analyse de Priorisation ABC")
+    # Simulation de données réelles GDIZ pour démontrer l'analyse
     data_demo = {
         'Produit': ['Fibre de Coton', 'Noix de Cajou', 'Soja Bio', 'Textile transformé', 'Ananas'],
         'valeur_consommation': [5000000, 3000000, 1500000, 400000, 100000]
@@ -109,42 +112,10 @@ with col_ia2:
     df_demo = pd.DataFrame(data_demo)
     
     if st.button("Lancer l'Analyse de Pareto"):
+        # Appel de la fonction de ai_engine.py
         df_priorise = classify_abc(df_demo)
         st.dataframe(df_priorise[['Produit', 'Categorie_ABC']], use_container_width=True)
-        st.caption("Les produits 'A' représentent 80% de votre valeur totale.")
+        st.caption("Priorisez vos inventaires : les produits 'A' représentent 80% de votre valeur totale.")
 
-# --- 4. SECTION : PERFORMANCE QUALITÉ (SIX SIGMA) ---
-st.markdown("---")
-st.markdown("### 📊 Performance Qualité : Lean Six Sigma")
-
-col_sig1, col_sig2 = st.columns([1, 2])
-
-with col_sig1:
-    st.info("Calculateur DPMO")
-    total_colis = st.number_input("Total colis préparés", value=10000, min_value=1)
-    erreurs = st.number_input("Erreurs constatées (Inversions/Défauts)", value=50, min_value=0)
-    
-    if st.button("Calculer le Niveau Sigma"):
-        dpmo_res, sigma_res = analyse_six_sigma(total_colis, erreurs)
-        st.metric("Niveau Sigma", f"{sigma_res} σ")
-        st.write(f"**DPMO :** {dpmo_res:,.0f}")
-    else:
-        # Initialisation par défaut pour éviter l'erreur NameError au premier chargement
-        sigma_res = 0
-
-with col_sig2:
-    st.write("#### Interprétation MIT CTL")
-    if 'sigma_res' in locals() and sigma_res > 0:
-        if sigma_res >= 4.5:
-            st.success("Excellent : Processus de classe mondiale (World Class Manufacturing).")
-        elif sigma_res >= 3.0:
-            st.warning("Standard : Processus stable mais nécessite une réduction de la variabilité.")
-        else:
-            st.error("Critique : Capabilité insuffisante. Risque élevé de coûts de non-qualité.")
-    else:
-        st.write("Veuillez lancer le calcul pour obtenir l'interprétation.")
-    
-    st.caption("Le MIT valorise la réduction de la variabilité pour stabiliser la Supply Chain.")
-
-st.sidebar.info("WMS Intelligent · Axe GDIZ")
-    
+st.sidebar.info("WMS Intelligent")
+            
