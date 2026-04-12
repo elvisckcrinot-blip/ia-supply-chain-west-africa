@@ -3,7 +3,7 @@ import pulp
 import pandas as pd
 import plotly.graph_objects as go
 
-# Configuration de la page
+# --- CONFIGURATION ET STYLE ---
 st.set_page_config(page_title="Smart Network Optimizer", layout="wide")
 
 st.markdown("""
@@ -13,102 +13,92 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-title">Optimisation du Réseau (MIT SCM Model)</h1>', unsafe_allow_html=True)
-st.write("Ce module utilise la **Programmation Linéaire** pour minimiser les coûts de transport GDIZ vers le Nord.")
+st.markdown('<h1 class="main-title">🎯 Optimisation du Réseau (Dynamique)</h1>', unsafe_allow_html=True)
 
-# --- 1. PARAMÈTRES RÉCUPÉRÉS ET SÉLECTION PRODUIT ---
+# --- 1. PARAMÈTRES ET RÉFÉRENTIEL VILLES ---
+# Base de données des distances depuis GDIZ
+database_villes = {
+    "Parakou": 410, 
+    "Malanville": 730, 
+    "Bohicon": 110, 
+    "Dassa": 190, 
+    "Natitingou": 480,
+    "Djougou": 440
+}
+
 col_param1, col_param2 = st.columns(2)
 
 with col_param1:
-    st.info("Données de Coûts (GDIZ)")
-    prix_diesel = st.number_input("Prix Diesel (FCFA/L)", value=700)
-    conso_moy = st.number_input("Consommation moyenne (L/100km)", value=35)
+    st.info("⛽ Données de Coûts")
+    prix_diesel = st.number_input("Prix Diesel (FCFA/L)", value=700, min_value=1)
+    conso_moy = st.number_input("Consommation (L/100km)", value=35, min_value=1)
     charges_fixes = st.number_input("Charges fixes/trajet (FCFA)", value=85000)
 
 with col_param2:
-    st.info("Stratégie de Chargement GDIZ")
-    # Ajout de la dimension produit pour le dossier MIT
-    produit_select = st.selectbox("Type de marchandise stratégique", 
-                                  ["Fibre de Coton", "Noix de Cajou transformée", "Soja Bio"])
-    
-    # Facteurs de conversion Tonnes/Camion (Logique de densité de fret)
+    st.info("📦 Marchandise GDIZ")
+    produit_select = st.selectbox("Type de fret", ["Fibre de Coton", "Noix de Cajou transformée", "Soja Bio"])
     dict_tonnage = {"Fibre de Coton": 22, "Noix de Cajou transformée": 28, "Soja Bio": 30}
     tonnage_unitaire = dict_tonnage[produit_select]
-    
-    st.write(f"Capacité estimée : **{tonnage_unitaire} Tonnes / Camion**")
+    st.write(f"Capacité : **{tonnage_unitaire} T / Camion**")
 
 st.divider()
 
-# --- 2. CAPACITÉS ET DEMANDE EN TONNES ---
-col_input1, col_input2 = st.columns(2)
+# --- 2. SÉLECTION DYNAMIQUE DES DESTINATIONS ---
+st.subheader("📍 Planification des Destinations")
+villes_selectionnees = st.multiselect(
+    "Choisir les villes de destination", 
+    options=list(database_villes.keys()),
+    default=["Parakou", "Malanville"]
+)
 
-with col_input1:
-    total_camions_dispo = st.slider("Flotte totale disponible à la GDIZ (Camions)", 1, 100, 30)
-    capacite_totale_tonnes = total_camions_dispo * tonnage_unitaire
-    st.write(f"Capacité totale de transport : {capacite_totale_tonnes} Tonnes")
+demandes = {}
+if villes_selectionnees:
+    cols = st.columns(len(villes_selectionnees))
+    for i, ville in enumerate(villes_selectionnees):
+        demandes[ville] = cols[i].number_input(f"Demande {ville} (T)", value=100, min_value=0)
 
-with col_input2:
-    demande_pko_t = st.number_input("Demande Parakou (Tonnes)", value=200)
-    demande_mln_t = st.number_input("Demande Malanville (Tonnes)", value=400)
+    total_camions_dispo = st.slider("Flotte disponible (Camions)", 1, 100, 30)
 
-# --- 3. LOGIQUE D'OPTIMISATION ---
-dist_parakou = 410
-dist_malanville = 730
+    # --- 3. LOGIQUE D'OPTIMISATION (PuLP Dynamique) ---
+    if st.button("🚀 EXÉCUTER L'ALGORITHME"):
+        if prix_diesel > 0 and conso_moy > 0:
+            model = pulp.LpProblem("Minimisation_Couts_Dynamique", pulp.LpMinimize)
+            
+            # Variables de décision créées dynamiquement
+            vars_camions = {v: pulp.LpVariable(f"Camions_{v}", lowBound=0, cat='Integer') for v in villes_selectionnees}
 
-def estimer_cout(distance):
-    cout_diesel = (distance * (conso_moy / 100)) * prix_diesel
-    return cout_diesel + charges_fixes
+            # Fonction Objectif : Somme (Camions * Coût par trajet)
+            couts_trajets = {}
+            for v in villes_selectionnees:
+                dist = database_villes[v]
+                couts_trajets[v] = (dist * (conso_moy / 100) * prix_diesel) + charges_fixes
+            
+            model += pulp.lpSum([vars_camions[v] * couts_trajets[v] for v in villes_selectionnees])
 
-cost_pko = estimer_cout(dist_parakou)
-cost_mln = estimer_cout(dist_malanville)
+            # Contraintes
+            model += pulp.lpSum([vars_camions[v] for v in villes_selectionnees]) <= total_camions_dispo, "Capacite_Totale"
+            for v in villes_selectionnees:
+                model += vars_camions[v] * tonnage_unitaire >= demandes[v], f"Satisfaction_{v}"
 
-if st.button("EXECUTER L'ALGORITHME D'OPTIMISATION"):
-    # Initialisation
-    model = pulp.LpProblem("Minimisation_Couts_Transport", pulp.LpMinimize)
+            model.solve()
 
-    # Variables : Nombre de camions (Entiers car on ne divise pas un camion)
-    x_pko = pulp.LpVariable("Camions_Parakou", lowBound=0, cat='Integer')
-    x_mln = pulp.LpVariable("Camions_Malanville", lowBound=0, cat='Integer')
+            # --- 4. AFFICHAGE DES RÉSULTATS ---
+            st.success(f"Optimisation terminée (Statut : {pulp.LpStatus[model.status]})")
+            
+            res_col1, res_col2 = st.columns([1, 2])
+            with res_col1:
+                for v in villes_selectionnees:
+                    st.metric(f"Vers {v}", f"{int(vars_camions[v].varValue)} Camions")
+                
+                total_final = pulp.value(model.objective)
+                st.markdown(f'<div class="opti-card"><b>Coût Total :</b> {total_final:,.0f} FCFA</div>', unsafe_allow_html=True)
 
-    # Objectif
-    model += (x_pko * cost_pko) + (x_mln * cost_mln), "Cout_Total"
-
-    # Contraintes (Conversion Tonnes vers Camions)
-    model += x_pko + x_mln <= total_camions_dispo, "Capacite_Flotte_GDIZ"
-    model += x_pko * tonnage_unitaire >= demande_pko_t, "Satisfaction_Parakou"
-    model += x_mln * tonnage_unitaire >= demande_mln_t, "Satisfaction_Malanville"
-
-    model.solve()
-
-    # --- 4. AFFICHAGE DES RÉSULTATS ---
-    st.markdown("---")
-    res_col1, res_col2 = st.columns([1, 2])
-
-    with res_col1:
-        st.write("### Plan d'Allocation")
-        st.success(f"Statut : {pulp.LpStatus[model.status]}")
-        st.metric(f"Camions {produit_select} -> Parakou", int(x_pko.varValue))
-        st.metric(f"Camions {produit_select} -> Malanville", int(x_mln.varValue))
-        
-        total_final = pulp.value(model.objective)
-        st.markdown(f"""
-            <div class="opti-card">
-                <div style="color: #7a92b0; font-size: 14px;">COUT OPERATIONNEL OPTIMISE</div>
-                <div style="font-size: 24px; font-weight: 800; color: #5fc385;">{total_final:,.0f} FCFA</div>
-                <div style="font-size: 11px; color: #7a92b0; margin-top:5px;">Algorithme : Mixed-Integer Linear Programming</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with res_col2:
-        st.write("### Comparaison des Flux (Tonnes)")
-        fig = go.Figure(data=[
-            go.Bar(name='Capacité Allouée (T)', x=['Parakou', 'Malanville'], 
-                   y=[x_pko.varValue * tonnage_unitaire, x_mln.varValue * tonnage_unitaire], marker_color='#5fc385'),
-            go.Bar(name='Demande Requise (T)', x=['Parakou', 'Malanville'], 
-                   y=[demande_pko_t, demande_mln_t], marker_color='#7a92b0')
-        ])
-        fig.update_layout(barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-        st.plotly_chart(fig, use_container_width=True)
-
-st.sidebar.warning("Ce module utilise le solveur CBC intégré à PuLP pour résoudre un problème de transport à variables entières.")
+            with res_col2:
+                fig = go.Figure(data=[
+                    go.Bar(name='Alloué (T)', x=villes_selectionnees, y=[vars_camions[v].varValue * tonnage_unitaire for v in villes_selectionnees], marker_color='#5fc385'),
+                    go.Bar(name='Requis (T)', x=villes_selectionnees, y=[demandes[v] for v in villes_selectionnees], marker_color='#7a92b0')
+                ])
+                st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("Veuillez sélectionner au moins une ville de destination.")
     
