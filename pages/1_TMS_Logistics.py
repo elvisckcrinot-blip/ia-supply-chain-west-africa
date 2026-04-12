@@ -1,5 +1,5 @@
 import streamlit as st
-from models.mit_calculations import calcul_cout_transport, calcul_rentabilite_flotte
+from modèles.mit_calculations import calcul_cout_transport, calcul_rentabilite_flotte
 from fpdf import FPDF
 import datetime
 import pandas as pd
@@ -14,6 +14,7 @@ st.markdown("""
     .main-title { font-family: 'Syne', sans-serif; color: #ffad1f; font-size: 38px; font-weight: 800; }
     .roi-card { background: rgba(255,173,31,0.05); border: 1px solid rgba(255,173,31,0.2); border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px; }
     .roi-val { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #ffad1f; }
+    .status-badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; color: #0a1628; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -27,7 +28,7 @@ st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["💰 Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
 
-# --- ONGLET 1 : ROI (Format Image Configuration) ---
+# --- ONGLET 1 : ROI ---
 with tab1:
     st.write("### Analyse de Rentabilité Annuelle (360 jours)")
     col_input, col_result = st.columns([1, 1])
@@ -60,7 +61,7 @@ with tab1:
 
 # --- ONGLET 2 : DOCKING ---
 with tab2:
-    st.write("### Registre de Docking")
+    st.write("### Registre de Docking GDIZ")
     with st.form("docking_form"):
         c1, c2, c3 = st.columns(3)
         immat = c1.text_input("Immatriculation", "RB 0001")
@@ -79,7 +80,7 @@ with tab2:
     if st.session_state.historique_docking:
         st.table(pd.DataFrame(st.session_state.historique_docking))
 
-# --- ONGLET 3 : TRACKING (Version Visuelle Améliorée) ---
+# --- ONGLET 3 : TRACKING (VERSION CORRIGÉE) ---
 with tab3:
     st.write("### Suivi Temps Réel de l'Expédition")
     
@@ -87,40 +88,53 @@ with tab3:
               "Allada", "Houègbo", "Cana", "Zogbodomey", "Bohicon", "Abomey", "Dassa", 
               "Glazoue", "Savalou", "Savè", "Parakou", "Natitingou", "Djougou", "Malanville"]
     
-    position_actuelle = st.selectbox("Position actuelle du convoi", villes, index=0)
+    col_pos, col_statut = st.columns(2)
     
-    st.write("Statut de livraison")
-    statut_exp = st.select_slider(
-        "Statut_Slider",
-        options=["En transit", "Incident", "Livré"],
-        value="En transit",
-        label_visibility="collapsed"
-    )
+    with col_pos:
+        position_actuelle = st.selectbox("📍 Localisation actuelle du convoi", villes, index=0)
     
-    couleurs = {"En transit": "#ffad1f", "Incident": "#ff4b4b", "Livré": "#00cc66"}
+    with col_statut:
+        statut_exp = st.select_slider(
+            "Mise à jour du statut",
+            options=["En transit", "Incident", "Livré"],
+            value="En transit"
+        )
+    
+    # Logique de couleurs
+    couleurs = {"En transit": "#ffad1f", "Incident": "#ff4b4b", "Livré": "#5fc385"}
     couleur_statut = couleurs.get(statut_exp, "#ffad1f")
-    
-    st.markdown(f"<span style='color:{couleur_statut}; font-weight:bold;'>{statut_exp}</span>", unsafe_allow_html=True)
 
+    # Carte de suivi dynamique
     st.markdown(f"""
         <div style="
-            background: rgba(255,255,255,0.05); 
+            background: rgba(255,255,255,0.03); 
             border-left: 5px solid {couleur_statut}; 
             border-radius: 15px; 
             padding: 30px; 
             margin-top: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         ">
             <h2 style="font-family:'Syne', sans-serif; color: #fff; margin-bottom: 15px;">
                 Convoi {immat if 'immat' in locals() else 'RB 0001'}
             </h2>
-            <p style="font-size: 18px; color: #e8edf5; margin: 5px 0;">
-                📍 Localisation : <b style="color:#ffad1f;">{position_actuelle}</b>
-            </p>
-            <p style="font-size: 16px; color: #7a92b0; margin: 5px 0;">
-                État : <span style="color:{couleur_statut}; font-weight:bold;">{statut_exp.upper()}</span>
+            <div style="display: flex; gap: 40px; align-items: center;">
+                <div>
+                    <p style="font-size: 14px; color: #7a92b0; margin-bottom: 5px;">POSITION ACTUELLE</p>
+                    <p style="font-size: 22px; color: #ffad1f; font-weight: 800; margin: 0;">{position_actuelle}</p>
+                </div>
+                <div>
+                    <p style="font-size: 14px; color: #7a92b0; margin-bottom: 5px;">ÉTAT DU FLUX</p>
+                    <span class="status-badge" style="background-color: {couleur_statut};">
+                        {statut_exp.upper()}
+                    </span>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: #5a7090; margin-top: 20px;">
+                Dernière mise à jour système : {datetime.datetime.now().strftime('%H:%M:%S')}
             </p>
         </div>
     """, unsafe_allow_html=True)
 
 st.sidebar.info("Axe stratégique : GDIZ → Malanville")
+        
