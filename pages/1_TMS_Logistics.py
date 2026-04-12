@@ -1,5 +1,5 @@
 import streamlit as st
-from modèles.mit_calculations import calcul_cout_transport, calcul_rentabilite_flotte
+from models.mit_calculations import calcul_cout_transport, calcul_rentabilite_flotte
 from fpdf import FPDF
 import datetime
 import pandas as pd
@@ -14,7 +14,6 @@ st.markdown("""
     .main-title { font-family: 'Syne', sans-serif; color: #ffad1f; font-size: 38px; font-weight: 800; }
     .roi-card { background: rgba(255,173,31,0.05); border: 1px solid rgba(255,173,31,0.2); border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px; }
     .roi-val { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #ffad1f; }
-    .status-badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; color: #0a1628; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -28,7 +27,7 @@ st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["💰 Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
 
-# --- ONGLET 1 : ROI ---
+# --- ONGLET 1 : ROI (Format Image Configuration) ---
 with tab1:
     st.write("### Analyse de Rentabilité Annuelle (360 jours)")
     col_input, col_result = st.columns([1, 1])
@@ -61,7 +60,7 @@ with tab1:
 
 # --- ONGLET 2 : DOCKING ---
 with tab2:
-    st.write("### Registre de Docking GDIZ")
+    st.write("### Registre de Docking")
     with st.form("docking_form"):
         c1, c2, c3 = st.columns(3)
         immat = c1.text_input("Immatriculation", "RB 0001")
@@ -80,7 +79,7 @@ with tab2:
     if st.session_state.historique_docking:
         st.table(pd.DataFrame(st.session_state.historique_docking))
 
-# --- ONGLET 3 : TRACKING (VERSION CORRIGÉE) ---
+# --- ONGLET 3 : TRACKING (Version Corrigée) ---
 with tab3:
     st.write("### Suivi Temps Réel de l'Expédition")
     
@@ -91,50 +90,44 @@ with tab3:
     col_pos, col_statut = st.columns(2)
     
     with col_pos:
-        position_actuelle = st.selectbox("📍 Localisation actuelle du convoi", villes, index=0)
+        position_actuelle = st.selectbox("📍 Localisation actuelle", villes, index=0)
     
     with col_statut:
         statut_exp = st.select_slider(
-            "Mise à jour du statut",
+            "Modifier le statut",
             options=["En transit", "Incident", "Livré"],
             value="En transit"
         )
     
-    # Logique de couleurs
+    # Couleurs dynamiques
     couleurs = {"En transit": "#ffad1f", "Incident": "#ff4b4b", "Livré": "#5fc385"}
     couleur_statut = couleurs.get(statut_exp, "#ffad1f")
 
-    # Carte de suivi dynamique
+    # Carte de statut stylisée
     st.markdown(f"""
         <div style="
             background: rgba(255,255,255,0.03); 
             border-left: 5px solid {couleur_statut}; 
             border-radius: 15px; 
             padding: 30px; 
-            margin-top: 25px;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
         ">
-            <h2 style="font-family:'Syne', sans-serif; color: #fff; margin-bottom: 15px;">
+            <h2 style="font-family:'Syne', sans-serif; color: #fff; margin-bottom: 10px;">
                 Convoi {immat if 'immat' in locals() else 'RB 0001'}
             </h2>
-            <div style="display: flex; gap: 40px; align-items: center;">
-                <div>
-                    <p style="font-size: 14px; color: #7a92b0; margin-bottom: 5px;">POSITION ACTUELLE</p>
-                    <p style="font-size: 22px; color: #ffad1f; font-weight: 800; margin: 0;">{position_actuelle}</p>
-                </div>
-                <div>
-                    <p style="font-size: 14px; color: #7a92b0; margin-bottom: 5px;">ÉTAT DU FLUX</p>
-                    <span class="status-badge" style="background-color: {couleur_statut};">
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <p style="font-size: 18px; color: #e8edf5; margin: 0;">
+                    📍 Position : <b style="color:#ffad1f;">{position_actuelle}</b>
+                </p>
+                <p style="font-size: 18px; color: #e8edf5; margin: 0;">
+                    État : <span style="background:{couleur_statut}; color:#0a1628; padding:3px 10px; border-radius:5px; font-weight:bold; font-size:14px;">
                         {statut_exp.upper()}
                     </span>
-                </div>
+                </p>
             </div>
-            <p style="font-size: 12px; color: #5a7090; margin-top: 20px;">
-                Dernière mise à jour système : {datetime.datetime.now().strftime('%H:%M:%S')}
-            </p>
         </div>
     """, unsafe_allow_html=True)
 
 st.sidebar.info("Axe stratégique : GDIZ → Malanville")
-        
+    
