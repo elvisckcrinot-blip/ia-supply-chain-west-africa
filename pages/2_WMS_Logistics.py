@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from models.mit_calculations import calcul_wilson_eoq, analyse_pareto_abc
+# Importation du moteur IA
+from models.ai_engine import predict_safety_stock, classify_abc
 import io
 
 # --- 1. CONFIGURATION ET STYLE ---
@@ -12,7 +14,6 @@ st.markdown("""
     .main-title { font-family: 'Syne', sans-serif; color: #ffad1f; font-size: 38px; font-weight: 800; }
     .wms-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: center; }
     .wms-val { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #ffad1f; }
-    /* Style pour l'en-tête bleu des paramètres */
     .param-header { background-color: #1a3a5a; color: #4a9eff; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; }
 </style>
 """, unsafe_allow_html=True)
@@ -57,30 +58,20 @@ with tab1:
             c2.markdown(f'<div class="wms-card"><div style="color:#7a92b0; font-size:12px;">ARTICLES À COMMANDER</div><div class="wms-val" style="color:#ff4b4b;">{nb_alertes}</div></div>', unsafe_allow_html=True)
             c3.markdown(f'<div class="wms-card"><div style="color:#7a92b0; font-size:12px;">RÉFÉRENCES GÉRÉES</div><div class="wms-val">{len(df)}</div></div>', unsafe_allow_html=True)
 
-            # Bouton Export
-            df_achat = df_abc[df_abc['Statut'].str.contains("🔴|🟠")].copy()
-            if not df_achat.empty:
-                excel_data = to_excel_plan_achat(df_achat[['Référence', 'Quantité', 'ROP_Seuil', 'Statut']])
-                st.download_button("📥 Télécharger le Plan d'Achat (Excel)", data=excel_data, file_name="plan_achat.xlsx")
-            
             st.dataframe(df_abc[['Référence', 'Valeur', 'Classe_ABC', 'Quantité', 'Statut']], use_container_width=True)
     else:
-        st.info("Veuillez charger votre fichier Excel pour activer l'analyse.")
+        st.info("Veuillez charger votre fichier Excel pour activer l'analyse de stock opérationnelle.")
 
-# --- ONGLET 2 : OPTIMISATION WILSON (FORMAT IMAGE) ---
+# --- ONGLET 2 : OPTIMISATION WILSON (EOQ) ---
 with tab2:
     st.markdown("## Calcul de la Quantité Économique de Commande")
     
-    # Bloc de saisie
     with st.container():
         st.markdown('<div class="param-header">Paramètres de Commande</div>', unsafe_allow_html=True)
-        
-        # Champs de saisie conformes à l'image
         demande_annuelle = st.number_input("Demande annuelle prévue (Unités)", value=1200, step=100)
         cout_passation = st.number_input("Coût de passation d'une commande (FCFA)", value=5000, step=500)
         cout_stockage = st.number_input("Coût de stockage /unité /an (FCFA)", value=250, step=10)
 
-    # Calcul et Affichage du résultat
     st.markdown("---")
     res_eoq = calcul_wilson_eoq(demande_annuelle, cout_passation, cout_stockage)
     
@@ -92,5 +83,38 @@ with tab2:
         </div>
     """, unsafe_allow_html=True)
 
-st.sidebar.info("WMS Intelligent · Axe GDIZ")
+# --- 3. NOUVELLE SECTION : INTELLIGENCE DE STOCK (IA ENGINE) ---
+st.markdown("---")
+st.markdown("### 🤖 Intelligence de Stock (Moteur IA)")
+
+col_ia1, col_ia2 = st.columns(2)
+
+with col_ia1:
+    st.info("Calcul du Stock de Sécurité (MIT SC0x)")
+    # Paramètres pour le calcul IA
+    service_lvl = st.select_slider("Niveau de Service cible", options=[0.85, 0.90, 0.95, 0.99], value=0.95)
+    sigma = st.number_input("Variabilité de la demande (Écart-type)", value=15, min_value=1)
+    lead_time = st.number_input("Délai de réapprovisionnement (Jours)", value=5, min_value=1)
     
+    if st.button("Calculer le Stock de Sécurité"):
+        # Appel de la fonction de ai_engine.py
+        ss_recommande = predict_safety_stock(service_lvl, sigma, lead_time)
+        st.success(f"Stock de Sécurité Recommandé : **{ss_recommande} unités**")
+        st.caption("Ce calcul aide à prévenir les ruptures de stock à la GDIZ en cas d'imprévus.")
+
+with col_ia2:
+    st.info("Analyse de Priorisation ABC")
+    # Simulation de données réelles GDIZ pour démontrer l'analyse
+    data_demo = {
+        'Produit': ['Fibre de Coton', 'Noix de Cajou', 'Soja Bio', 'Textile transformé', 'Ananas'],
+        'valeur_consommation': [5000000, 3000000, 1500000, 400000, 100000]
+    }
+    df_demo = pd.DataFrame(data_demo)
+    
+    if st.button("Lancer l'Analyse de Pareto"):
+        # Appel de la fonction de ai_engine.py
+        df_priorise = classify_abc(df_demo)
+        st.dataframe(df_priorise[['Produit', 'Categorie_ABC']], use_container_width=True)
+        st.caption("Priorisez vos inventaires : les produits 'A' représentent 80% de votre valeur totale.")
+
+st.sidebar.info("WMS Intelligent · Axe GDIZ")
