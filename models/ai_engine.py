@@ -11,7 +11,8 @@ def prediction_delai_eta(historique_trajets):
     # Ici viendra ton code scikit-learn
     return "Estimation en cours..."
 
-# --- SECTION 2 : INTELLIGENCE WMS (OPTIMISATION & ANOMALIES) ---
+# --- SECTION 2 : INTELLIGENCE WMS (OPTIMISATION, QUALITÉ & ANOMALIES) ---
+
 def predict_safety_stock(service_level, sigma_demand, lead_time):
     """
     Calcule le stock de sécurité optimal (Concept MIT SC0x).
@@ -37,10 +38,28 @@ def classify_abc(data_df):
     data_df['Categorie_ABC'] = data_df['cum_perc'].apply(category)
     return data_df
 
+def analyse_six_sigma(unites_preparees, defauts_constates):
+    """
+    Calcule la performance qualité des opérations d'entrepôt (Lean Six Sigma).
+    DPMO : Defects Per Million Opportunities.
+    """
+    if unites_preparees == 0: 
+        return 0, 0
+    
+    # Calcul du DPMO
+    dpmo = (defauts_constates / unites_preparees) * 1_000_000
+    
+    # Calcul du Niveau Sigma (avec le décalage conventionnel de 1.5 sigma)
+    # On utilise max(dpmo, 1) pour éviter les erreurs log avec 0 défaut
+    z_score = norm.ppf(1 - (max(dpmo, 1) / 1_000_000))
+    niveau_sigma = z_score + 1.5
+    
+    return round(dpmo, 0), round(niveau_sigma, 2)
+
 def detection_anomalies_stock(data_stock):
     """
     Identifie les vols ou erreurs de saisie via Isolation Forest.
     """
-    # Ici viendra ton code de détection d'anomalies
+    # Ici viendra ton code de détection d'anomalies (Scikit-learn)
     return data_stock
-    
+        
