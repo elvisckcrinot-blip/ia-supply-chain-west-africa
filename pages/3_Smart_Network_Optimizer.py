@@ -1,9 +1,15 @@
 import streamlit as st
+import sys
+import os
+
+# --- FIX IMPORTATION : Permet de trouver helpers.py à la racine depuis le dossier /pages ---
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pulp
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from helpers import save_optimization_result, apply_ui_theme  # Import de la fonction de sauvegarde
+from helpers import save_optimization_result, apply_ui_theme  # Importation sécurisée
 
 # --- CONFIGURATION ET STYLE ---
 apply_ui_theme()
@@ -85,7 +91,6 @@ if villes_selectionnees:
             for v in villes_selectionnees:
                 n_camions = int(vars_camions[v].varValue)
                 if n_camions > 0:
-                    # Enregistrement dans la table historique_trajets
                     save_optimization_result(
                         camion_id=1, 
                         destination=v,
