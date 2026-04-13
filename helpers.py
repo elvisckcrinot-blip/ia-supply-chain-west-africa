@@ -1,7 +1,6 @@
 import pandas as pd
 import streamlit as st
 import psycopg2
-from sqlalchemy import create_url
 
 # =================================================================
 # SECTION 1 : CONNEXION & ECRITURE BASE DE DONNÉES (POSTGRESQL)
@@ -10,7 +9,7 @@ from sqlalchemy import create_url
 def init_connection():
     """ 
     Connexion Ultime Neon : Intégration de l'Endpoint ID dans le User.
-    Résout les erreurs SNI et Endpoint ID non spécifié.
+    Résout les erreurs SNI et Endpoint ID non spécifié sans SQLAlchemy.
     """
     try:
         host = st.secrets["postgres"]["host"]
@@ -42,7 +41,7 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
-            # Utilisation de la connexion psycopg2 pour charger les données
+            # On utilise pandas avec la connexion psycopg2 brute
             df = pd.read_sql(query, conn)
             conn.close()
             return df
@@ -126,4 +125,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-            
+    
