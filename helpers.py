@@ -7,26 +7,36 @@ import psycopg2
 # =================================================================
 
 def init_connection():
-    """ Initialise la connexion vers Neon avec SSL et Endpoint ID. """
+    """ 
+    Connexion Robuste Neon (Format DSN).
+    Résout les erreurs 'Endpoint ID' et 'SSL insecure'.
+    """
     try:
-        # On récupère l'identifiant du projet (endpoint) depuis l'hôte
+        # Extraction des secrets
         host = st.secrets["postgres"]["host"]
-        # On extrait la première partie de l'URL (ex: ep-steep-glitter-...)
+        user = st.secrets["postgres"]["user"]
+        password = st.secrets["postgres"]["password"]
+        database = st.secrets["postgres"]["database"]
+        port = st.secrets["postgres"]["port"]
+        
+        # Extraction automatique de l'ID d'endpoint (ex: ep-steep-glitter-...)
         endpoint_id = host.split('.')[0]
         
-        return psycopg2.connect(
-            host=host,
-            port=st.secrets["postgres"]["port"],
-            database=st.secrets["postgres"]["database"],
-            user=st.secrets["postgres"]["user"],
-            password=st.secrets["postgres"]["password"],
-            # AJOUT DU MODE SSL (Exigence Neon pour la sécurité)
-            sslmode="require",
-            # Correction SNI Support (Réveil du serveur Neon)
-            options=f"-c endpointn={endpoint_id}"
+        # CONSTRUCTION DE LA CHAÎNE DE CONNEXION (DSN)
+        # C'est la méthode recommandée par Neon pour éviter les erreurs de réveil du serveur
+        conn_string = (
+            f"host={host} "
+            f"port={port} "
+            f"user={user} "
+            f"password={password} "
+            f"dbname={database} "
+            f"sslmode=require "
+            f"options='-c endpointn={endpoint_id}'"
         )
+        
+        return psycopg2.connect(conn_string)
     except Exception as e:
-        st.error(f"❌ Erreur de connexion à la base de données : {e}")
+        st.error(f"❌ Erreur de connexion au serveur : {e}")
         return None
 
 def get_data(query):
@@ -34,6 +44,7 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
+            # Utilisation directe de la connexion avec pandas
             df = pd.read_sql(query, conn)
             conn.close()
             return df
@@ -117,4 +128,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-            
+        
