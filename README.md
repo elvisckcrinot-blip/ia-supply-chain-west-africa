@@ -8,16 +8,7 @@
 ## Vision : Transformer l'Incertitude en Donnée
 Ce projet démontre comment l'**IA prédictive** et la **Recherche Opérationnelle** peuvent sécuriser les flux industriels dans la zone UEMOA. En anticipant les ruptures logistiques mondiales, nous construisons la souveraineté industrielle de demain.
 
-> **Status:** Current Research | Future **MIT SCM** Candidate 
-
----
-
-## Cas Pratique : Optimisation Fludor SA (Cana, Bénin)
-Basé sur une analyse terrain du Système de Management de la Sécurité des Denrées Alimentaires (SMSDA) :
-
-*   **Réduction des Ruptures** : Utilisation d'un modèle **Random Forest** pour une réduction potentielle de **22%** des ruptures de composants critiques.
-*   **Suivi Digital des Pertes** : Algorithme de contrôle (via `models/ai_engine.py`) visant l'objectif strict de **0,20%** de perte matière.
-*   **Performance Six Sigma** : Surveillance automatisée du taux de conformité des produits finis (>95%) grâce à la traçabilité numérique.
+> **Status:** Current Research | Future **MIT SCM** Candidate 🚀
 
 ---
 
