@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+
+# --- FIX IMPORTATION : Permet de trouver helpers.py à la racine ---
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
 import plotly.express as px
 from helpers import get_data, apply_ui_theme, preprocess_for_mit
@@ -117,4 +123,4 @@ with tab3:
 
 st.divider()
 st.caption("WA Logistics Hub · Base de données : Neon Cloud · Moteur : Python 3.9")
-    
+        
