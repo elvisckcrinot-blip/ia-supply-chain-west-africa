@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 import psycopg2
+from sqlalchemy import create_url
 
 # =================================================================
 # SECTION 1 : CONNEXION & ECRITURE BASE DE DONNÉES (POSTGRESQL)
@@ -16,21 +17,21 @@ def init_connection():
         user = st.secrets["postgres"]["user"]
         password = st.secrets["postgres"]["password"]
         database = st.secrets["postgres"]["database"]
+        port = st.secrets["postgres"]["port"]
         
-        # Extraction de l'endpoint_id (ex: ep-steep-glitter-...)
+        # Extraction précise de l'endpoint_id (ex: ep-steep-glitter-...)
         endpoint_id = host.split('.')[0]
         
-        # TECHNIQUE NEON : Combiner l'identifiant du projet et l'utilisateur avec '$'
-        # Format attendu : ep-votre-id$votre-utilisateur
+        # TECHNIQUE NEON : Combiner l'identifiant et l'utilisateur avec '$'
         user_with_endpoint = f"{endpoint_id}${user}"
         
         return psycopg2.connect(
             host=host,
-            port=st.secrets["postgres"]["port"],
+            port=port,
             database=database,
-            user=user_with_endpoint, # On injecte l'utilisateur modifié
+            user=user_with_endpoint,
             password=password,
-            sslmode="require" # Obligatoire pour Neon
+            sslmode="require"
         )
     except Exception as e:
         st.error(f"❌ Échec de la connexion sécurisée : {e}")
@@ -41,6 +42,7 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
+            # Utilisation de la connexion psycopg2 pour charger les données
             df = pd.read_sql(query, conn)
             conn.close()
             return df
@@ -124,4 +126,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-            
+        
