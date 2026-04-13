@@ -3,13 +3,16 @@ import streamlit as st
 import pg8000.native
 
 def init_connection():
+    """Initialise la connexion à la base de données Neon PostgreSQL."""
     try:
         host = st.secrets["postgres"]["host"]
         user = st.secrets["postgres"]["user"]
         password = st.secrets["postgres"]["password"]
         database = st.secrets["postgres"]["database"]
         port = st.secrets["postgres"]["port"]
-        endpoint_id = host.split('.')[0]
+        
+        # Formatage spécifique pour Neon (endpoint ID dans le user)
+        endpoint_id = host.split('.')[0].replace('-pooler', '')
         user_neon = f"{user}@{endpoint_id}"
 
         conn = pg8000.native.Connection(
@@ -26,6 +29,7 @@ def init_connection():
         return None
 
 def get_data(query):
+    """Exécute une requête de lecture et retourne un DataFrame."""
     conn = init_connection()
     if conn:
         try:
@@ -39,6 +43,7 @@ def get_data(query):
     return None
 
 def save_optimization_result(camion_id, destination, cout_estime, statut="Planifié"):
+    """Enregistre un résultat d'optimisation dans l'historique."""
     conn = init_connection()
     if conn:
         try:
@@ -54,6 +59,7 @@ def save_optimization_result(camion_id, destination, cout_estime, statut="Planif
     return False
 
 def load_logistics_data(file_path):
+    """Charge un fichier CSV ou Excel."""
     try:
         if file_path.name.endswith('.csv'):
             return pd.read_csv(file_path)
@@ -64,23 +70,39 @@ def load_logistics_data(file_path):
         return None
 
 def preprocess_for_mit(df):
+    """Nettoie et convertit les types de données pour l'analyse."""
     if df is None: return None
     df.columns = [c.strip() for c in df.columns]
+    
     cols_numeriques = ['Valeur', 'Prix', 'Quantité', 'ROP_Seuil', 'prix_unitaire', 'quantite_actuelle']
     for col in cols_numeriques:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
+            
     cols_critiques = [c for c in ['Prix', 'Quantité', 'prix_unitaire', 'quantite_actuelle'] if c in df.columns]
     if cols_critiques:
         df = df.dropna(subset=cols_critiques)
     return df
 
 def apply_ui_theme():
+    """Applique le style CSS personnalisé à l'interface Streamlit."""
     st.markdown("""
         <style>
-        .stMetric { border: 1px solid rgba(255,173,31,0.2); padding: 15px; border-radius: 10px; background: rgba(0,0,0,0.1); }
-        .stDataFrame { border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; }
-        div.stButton > button { font-weight: bold; border-radius: 8px; }
+        .stMetric { 
+            border: 1px solid rgba(255,173,31,0.2); 
+            padding: 15px; 
+            border-radius: 10px; 
+            background: rgba(0,0,0,0.1); 
+        }
+        .stDataFrame { 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 5px; 
+        }
+        div.stButton > button { 
+            font-weight: bold; 
+            border-radius: 8px; 
+            width: 100%;
+        }
         </style>
     """, unsafe_allow_html=True)
             
