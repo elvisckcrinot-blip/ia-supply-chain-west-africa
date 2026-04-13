@@ -126,4 +126,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-        
+            
