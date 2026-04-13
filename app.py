@@ -21,10 +21,11 @@ apply_ui_theme()
 def login():
     st.markdown('<div class="hero" style="text-align:center;">', unsafe_allow_html=True)
     st.subheader("🌍 Accès Sécurisé WA Logistics Hub")
-    user = st.text_input("Identifiant", placeholder="Admin / Manager")
+    user = st.text_input("Identifiant", placeholder="Ex: Admin, Elvis, Manager...")
     pwd = st.text_input("Mot de passe", type="password")
     if st.button("Entrer dans le Cockpit"):
-        if user.lower() in ["admin", "mit"] and pwd == "benin2026":
+        # Liste des identifiants autorisés
+        if user.lower() in ["admin", "mit", "elvis"] and pwd == "benin2026":
             st.session_state['auth'] = True
             st.session_state['role'] = user
             st.rerun()
@@ -50,19 +51,21 @@ else:
             st.session_state['auth'] = False
             st.rerun()
 
-    # 5. SECTION HERO
+    # 5. SECTION HERO DYNAMIQUE
+    # On récupère le rôle et on met la 1ère lettre en Majuscule pour le look Pro
+    nom_display = st.session_state['role'].capitalize()
+
     st.markdown(f"""
     <div class="hero">
         <div style="text-transform: uppercase; letter-spacing: 2px; color: #ffad1f; font-size: 11px; font-weight: 700; margin-bottom: 5px;">Data-Driven Supply Chain · GDIZ Corridor</div>
-        <h1 class="hero-title">Logistics <span>Cockpit</span></h1>
+        <h1 class="hero-title">Hello, <span>{nom_display}</span> !</h1>
         <p style="color: #7a92b0; max-width: 650px; font-size: 15px; margin-top:10px;">
-            Optimisation temps réel <b>GDIZ – Hinterland</b>. Intégration des modèles <b>SC1x (Optimization)</b> et <b>Six Sigma</b> pour la réduction de la variabilité.
+            Bienvenue dans votre cockpit d'optimisation. Vos modèles <b>SC1x (Optimization)</b> et <b>Six Sigma</b> sont prêts pour l'analyse du corridor <b>GDIZ – Hinterland</b>.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     # 6. KPIS DYNAMIQUES (RÉCUPÉRATION DEPUIS NEON)
-    # On récupère le nombre réel de camions et d'alertes stock
     try:
         df_flotte = get_data("SELECT COUNT(*) as total FROM flotte_vehicules")
         df_alertes = get_data("SELECT COUNT(*) as total FROM stocks_gdiz WHERE quantite_actuelle <= seuil_rop")
@@ -109,4 +112,3 @@ else:
 
     # 8. FOOTER
     st.markdown('<p style="text-align:center; color:#5a7090; font-size:11px; margin-top:40px;">Bénin Logistics Hub | Projet Portfolio MIT CTL MicroMasters | Powered by Neon PostgreSQL & PuLP</p>', unsafe_allow_html=True)
-    
