@@ -9,3 +9,14 @@ font = "sans serif"
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+# Augmente la limite pour les imports Excel/CSV de ton WMS (50 Mo)
+maxUploadSize = 50
+
+[browser]
+# Désactive les stats d'usage et masque les boutons Streamlit pour un look "App Pro"
+gatherUsageStats = false
+toolbarMode = "minimal"
+
+[client]
+# Masque les détails d'erreur pour les utilisateurs finaux
+showErrorDetails = false
