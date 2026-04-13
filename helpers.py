@@ -9,12 +9,14 @@ def init_connection():
         password = st.secrets["postgres"]["password"]
         database = st.secrets["postgres"]["database"]
         port = st.secrets["postgres"]["port"]
+        endpoint_id = host.split('.')[0]
+        user_neon = f"{user}@{endpoint_id}"
 
         conn = pg8000.native.Connection(
             host=host,
             port=int(port),
             database=database,
-            user=user,
+            user=user_neon,
             password=password,
             ssl_context=True
         )
