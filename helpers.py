@@ -8,35 +8,32 @@ import psycopg2
 
 def init_connection():
     """ 
-    Connexion Robuste Neon (Format DSN).
-    Résout les erreurs 'Endpoint ID' et 'SSL insecure'.
+    Connexion Ultime Neon : Intégration de l'Endpoint ID dans le User.
+    Résout les erreurs SNI et Endpoint ID non spécifié.
     """
     try:
-        # Extraction des secrets
         host = st.secrets["postgres"]["host"]
         user = st.secrets["postgres"]["user"]
         password = st.secrets["postgres"]["password"]
         database = st.secrets["postgres"]["database"]
-        port = st.secrets["postgres"]["port"]
         
-        # Extraction automatique de l'ID d'endpoint (ex: ep-steep-glitter-...)
+        # Extraction de l'endpoint_id (ex: ep-steep-glitter-...)
         endpoint_id = host.split('.')[0]
         
-        # CONSTRUCTION DE LA CHAÎNE DE CONNEXION (DSN)
-        # C'est la méthode recommandée par Neon pour éviter les erreurs de réveil du serveur
-        conn_string = (
-            f"host={host} "
-            f"port={port} "
-            f"user={user} "
-            f"password={password} "
-            f"dbname={database} "
-            f"sslmode=require "
-            f"options='-c endpointn={endpoint_id}'"
-        )
+        # TECHNIQUE NEON : Combiner l'identifiant du projet et l'utilisateur avec '$'
+        # Format attendu : ep-votre-id$votre-utilisateur
+        user_with_endpoint = f"{endpoint_id}${user}"
         
-        return psycopg2.connect(conn_string)
+        return psycopg2.connect(
+            host=host,
+            port=st.secrets["postgres"]["port"],
+            database=database,
+            user=user_with_endpoint, # On injecte l'utilisateur modifié
+            password=password,
+            sslmode="require" # Obligatoire pour Neon
+        )
     except Exception as e:
-        st.error(f"❌ Erreur de connexion au serveur : {e}")
+        st.error(f"❌ Échec de la connexion sécurisée : {e}")
         return None
 
 def get_data(query):
@@ -44,7 +41,6 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
-            # Utilisation directe de la connexion avec pandas
             df = pd.read_sql(query, conn)
             conn.close()
             return df
@@ -70,7 +66,7 @@ def save_optimization_result(camion_id, destination, cout_estime, statut="Planif
             conn.close()
             return True
         except Exception as e:
-            st.error(f"❌ Erreur lors de l'enregistrement du trajet : {e}")
+            st.error(f"❌ Erreur lors de l'enregistrement : {e}")
             if conn: conn.close()
             return False
     return False
@@ -128,4 +124,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-        
+            
