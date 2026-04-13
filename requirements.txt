@@ -2,7 +2,7 @@ streamlit
 pandas
 numpy
 openpyxl
-psycopg2-binary
+psycopg2-binary>=2.9.5
 scikit-learn
 scipy
 statsmodels
