@@ -1,14 +1,23 @@
-# Données confidentielles
+# --- Données confidentielles ---
 data/raw/*
 data/processed/*
 
-# Fichiers Python temporaires
+# --- Fichiers Python techniques ---
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# Environnement virtuel
+# --- Environnement virtuel ---
 venv/
+.venv/
+env/
 .env
 
-# Fichiers système
+# --- Configuration Streamlit (IMPORTANT) ---
+# Empêche de publier tes mots de passe et clés API en local
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# --- Fichiers système ---
 .DS_Store
+Thumbs.db
