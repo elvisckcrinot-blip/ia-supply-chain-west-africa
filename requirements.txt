@@ -2,8 +2,7 @@ streamlit
 pandas
 numpy
 openpyxl
-psycopg2-binary
-sqlalchemy
+psycopg2
 scikit-learn
 scipy
 statsmodels
