@@ -3,9 +3,10 @@ import pulp
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
+from helpers import save_optimization_result, apply_ui_theme  # Import de la fonction de sauvegarde
 
 # --- CONFIGURATION ET STYLE ---
-# On retire st.set_page_config car il est déjà dans app.py (Streamlit multipage)
+apply_ui_theme()
 
 st.markdown("""
 <style>
@@ -18,11 +19,10 @@ st.markdown("""
 st.markdown('<h1 class="main-title">🎯 Network Optimizer (SC1x + Six Sigma)</h1>', unsafe_allow_html=True)
 st.markdown('<span class="six-sigma-badge">MOTEUR CBC AVEC PÉNALITÉ DE VARIABILITÉ</span>', unsafe_allow_html=True)
 
-# --- 1. BASE DE DONNÉES AVEC INDICE SIGMA (Variabilité historique) ---
-# Sigma représente l'instabilité du trajet (ex: travaux, douanes, météo)
+# --- 1. BASE DE DONNÉES AVEC INDICE SIGMA ---
 database_villes = {
     "Parakou": {"dist": 410, "sigma": 1.2}, 
-    "Malanville": {"dist": 730, "sigma": 2.8}, # Plus risqué (Corridor)
+    "Malanville": {"dist": 730, "sigma": 2.8}, 
     "Bohicon": {"dist": 110, "sigma": 1.0}, 
     "Dassa": {"dist": 190, "sigma": 1.5}, 
     "Natitingou": {"dist": 480, "sigma": 2.1},
@@ -40,7 +40,6 @@ with col_param1:
 with col_param2:
     st.info("📊 Stratégie Qualité (Six Sigma)")
     poids_sigma = st.slider("Poids de la variabilité (Impact Risque)", 0, 100000, 25000)
-    st.caption("Pénalise les trajets instables dans l'optimisation mathématique.")
     produit_select = st.selectbox("Type de fret", ["Fibre de Coton", "Noix de Cajou transformée", "Soja Bio"])
     tonnage_unitaire = {"Fibre de Coton": 22, "Noix de Cajou transformée": 28, "Soja Bio": 30}[produit_select]
 
@@ -57,60 +56,62 @@ if villes_selectionnees:
 
     total_camions_dispo = st.slider("Flotte totale disponible (GDIZ)", 1, 100, 30)
 
-    # --- 3. LOGIQUE D'OPTIMISATION AMÉLIORÉE ---
-    if st.button("🚀 LANCER L'OPTIMISATION ROBUST"):
+    # --- 3. LOGIQUE D'OPTIMISATION ---
+    if st.button("🚀 LANCER L'OPTIMISATION ROBUSTE"):
         model = pulp.LpProblem("Optimization_Fret_Robust", pulp.LpMinimize)
-        
-        # Variables
         vars_camions = {v: pulp.LpVariable(f"Cam_{v}", lowBound=0, cat='Integer') for v in villes_selectionnees}
 
-        # CALCUL DU COÛT GÉNÉRALISÉ (Prix + Risque Sigma)
+        couts_trajets_réels = {}
         couts_robustes = {}
         for v in villes_selectionnees:
             dist = database_villes[v]["dist"]
             sigma = database_villes[v]["sigma"]
             cout_standard = (dist * (conso_moy / 100) * prix_diesel) + charges_fixes
-            # On ajoute la pénalité Six Sigma : plus sigma est fort, plus le coût "virtuel" augmente
+            couts_trajets_réels[v] = cout_standard
             couts_robustes[v] = cout_standard + (sigma * poids_sigma)
 
-        # Objectif : Minimiser Coûts + Instabilité
         model += pulp.lpSum([vars_camions[v] * couts_robustes[v] for v in villes_selectionnees])
-
-        # Contraintes
         model += pulp.lpSum([vars_camions[v] for v in villes_selectionnees]) <= total_camions_dispo
         for v in villes_selectionnees:
             model += vars_camions[v] * tonnage_unitaire >= demandes[v]
 
         model.solve(pulp.PULP_CBC_CMD(msg=0))
 
-        # --- 4. RÉSULTATS ET DASHBOARD ---
+        # --- 4. RÉSULTATS & SAUVEGARDE ---
         if pulp.LpStatus[model.status] == 'Optimal':
-            st.success("✅ Solution Optimale de Niveau Six Sigma trouvée")
+            st.success("✅ Solution optimale trouvée et sauvegardée en base de données.")
             
+            # --- LOGIQUE DE SAUVEGARDE POSTGRESQL ---
+            for v in villes_selectionnees:
+                n_camions = int(vars_camions[v].varValue)
+                if n_camions > 0:
+                    # Enregistrement dans la table historique_trajets
+                    save_optimization_result(
+                        camion_id=1, 
+                        destination=v,
+                        cout_estime=couts_trajets_réels[v] * n_camions,
+                        statut="Planifié (Optimisé)"
+                    )
+            
+            # --- AFFICHAGE DASHBOARD ---
             res_col1, res_col2 = st.columns([1, 2])
             with res_col1:
                 st.markdown("### 🚛 Allocation Flotte")
                 for v in villes_selectionnees:
                     val = int(vars_camions[v].varValue)
-                    st.write(f"**{v}** : {val} camions")
+                    if val > 0: st.write(f"**{v}** : {val} camions")
                 
-                total_cout_reel = sum([vars_camions[v].varValue * ((database_villes[v]["dist"] * (conso_moy / 100) * prix_diesel) + charges_fixes) for v in villes_selectionnees])
-                st.markdown(f'<div class="opti-card"><b>Coût Opérationnel Estimé :</b><br><span style="font-size:20px; color:#5fc385;">{total_cout_reel:,.0f} FCFA</span></div>', unsafe_allow_html=True)
+                total_cout_reel = sum([vars_camions[v].varValue * couts_trajets_réels[v] for v in villes_selectionnees])
+                st.markdown(f'<div class="opti-card"><b>Coût Opérationnel Total :</b><br><span style="font-size:20px; color:#5fc385;">{total_cout_reel:,.0f} FCFA</span></div>', unsafe_allow_html=True)
 
             with res_col2:
-                # Graphique de comparaison Capacité vs Demande
                 fig = go.Figure(data=[
                     go.Bar(name='Capacité Allouée', x=villes_selectionnees, y=[vars_camions[v].varValue * tonnage_unitaire for v in villes_selectionnees], marker_color='#5fc385'),
                     go.Bar(name='Demande Client', x=villes_selectionnees, y=[demandes[v] for v in villes_selectionnees], marker_color='#3e4451')
                 ])
                 fig.update_layout(title="Adéquation Capacité / Demande", barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color="white"))
                 st.plotly_chart(fig, use_container_width=True)
-                
-            # --- 5. EXPORT PDF ---
-            st.divider()
-            st.download_button("📥 Télécharger le plan d'optimisation (PDF)", "Contenu du PDF ici", "optimisation_plan.pdf")
         else:
-            st.error("❌ Impossible de satisfaire la demande avec la flotte actuelle. Augmentez le nombre de camions ou réduisez la demande.")
-
+            st.error("❌ Échec de l'optimisation : Ressources insuffisantes.")
 else:
-    st.warning("Choisissez au moins une destination pour démarrer l'Optimizer.")
+    st.warning("Sélectionnez des destinations pour activer le moteur CBC.")
