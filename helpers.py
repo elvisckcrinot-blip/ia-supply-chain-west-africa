@@ -7,11 +7,11 @@ import psycopg2
 # =================================================================
 
 def init_connection():
-    """ Initialise la connexion vers Neon avec support SNI/Endpoint. """
+    """ Initialise la connexion vers Neon avec SSL et Endpoint ID. """
     try:
         # On récupère l'identifiant du projet (endpoint) depuis l'hôte
-        # Exemple: ep-steep-glitter...
         host = st.secrets["postgres"]["host"]
+        # On extrait la première partie de l'URL (ex: ep-steep-glitter-...)
         endpoint_id = host.split('.')[0]
         
         return psycopg2.connect(
@@ -20,7 +20,9 @@ def init_connection():
             database=st.secrets["postgres"]["database"],
             user=st.secrets["postgres"]["user"],
             password=st.secrets["postgres"]["password"],
-            # Correction cruciale pour Neon (SNI Support)
+            # AJOUT DU MODE SSL (Exigence Neon pour la sécurité)
+            sslmode="require",
+            # Correction SNI Support (Réveil du serveur Neon)
             options=f"-c endpointn={endpoint_id}"
         )
     except Exception as e:
@@ -32,7 +34,6 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
-            # Utilisation directe de la connexion avec pandas
             df = pd.read_sql(query, conn)
             conn.close()
             return df
