@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+
+# --- FIX IMPORTATION : Permet de trouver helpers.py à la racine ---
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import datetime
 import pandas as pd
 import plotly.express as px
@@ -35,7 +41,6 @@ with tab1:
     with c_in:
         st.info("Variables de Flotte (Live)")
         tarif_client = st.number_input("Tarif Client (FCFA/Trajet)", value=650000)
-        # On utilise le nombre de camions de la DB comme valeur par défaut
         nbre_camions = st.slider("Flotte active / Jour", 1, 100, n_camions_db)
         dist_axe = st.number_input("Distance Moyenne (km)", value=720)
         conso = st.number_input("Conso (L/100km)", value=35)
@@ -58,7 +63,6 @@ with tab1:
         marge = tarif_client - cout_revient
         k2.metric("Marge / Trajet", f"{marge:,.0f} FCFA", delta=f"{(marge/tarif_client*100):.1f}%")
         
-        # Graphique de structure de coût
         df_costs = pd.DataFrame({
             'Poste': ['Diesel', 'Fixes', 'Marge'],
             'Valeur': [(dist_axe*conso/100*prix_gazole), fixes, marge]
@@ -73,7 +77,6 @@ with tab2:
     with st.expander("➕ Enregistrer une nouvelle affectation"):
         with st.form("docking"):
             f1, f2, f3 = st.columns(3)
-            # Récupération des immatriculations réelles pour le formulaire
             liste_immat = df_flotte['immatriculation'].tolist() if df_flotte is not None else ["RB 0001"]
             immat = f1.selectbox("Camion", liste_immat)
             march = f2.selectbox("Fret", ["Fibre de Coton", "Noix de Cajou", "Soja", "Maïs", "Intrants"])
@@ -91,7 +94,6 @@ with tab2:
 with tab3:
     st.subheader("📍 Monitoring du Corridor & Missions")
     
-    # RÉCUPÉRATION DES MISSIONS SAUVEGARDÉES PAR L'OPTIMIZER
     df_missions = get_data("SELECT * FROM historique_trajets ORDER BY date_depart DESC LIMIT 10")
     
     if df_missions is not None and not df_missions.empty:
@@ -113,7 +115,6 @@ with tab3:
         </div>
     """, unsafe_allow_html=True)
 
-# FOOTER
 st.divider()
 st.caption("WA Logistics Hub · Base de données : Neon PostgreSQL · Référentiel MIT CTL")
     
