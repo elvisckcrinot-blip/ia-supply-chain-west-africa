@@ -1,27 +1,14 @@
-# --- Framework & Serveur ---
 streamlit
-
-# --- Manipulation de Données ---
 pandas
 numpy
-openpyxl
-
-# --- Base de Données (INDISPENSABLE pour Neon) ---
-psycopg2-binary
-
-# --- IA & Statistiques (Six Sigma / Random Forest) ---
 scikit-learn
-scipy
 statsmodels
-
-# --- Recherche Opérationnelle (Optimizer) ---
-pulp
-
-# --- Visualisation ---
+scipy
 plotly
 matplotlib
 seaborn
-
-# --- Exports & Utilitaires ---
-fpdf
 requests
+openpyxl
+fpdf
+pulp
+psycopg2-binary
