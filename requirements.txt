@@ -3,7 +3,6 @@ pandas
 numpy
 openpyxl
 psycopg2-binary
-sqlalchemy
 scikit-learn
 scipy
 statsmodels
