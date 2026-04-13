@@ -3,7 +3,7 @@ import streamlit as st
 import psycopg2
 
 # =================================================================
-# SECTION 1 : CONNEXION BASE DE DONNÉES (POSTGRESQL / NEON)
+# SECTION 1 : CONNEXION & ECRITURE BASE DE DONNÉES (POSTGRESQL)
 # =================================================================
 
 def init_connection():
@@ -21,7 +21,7 @@ def init_connection():
         return None
 
 def get_data(query):
-    """Exécute une requête SQL et retourne un DataFrame Pandas."""
+    """Exécute une requête SQL de lecture et retourne un DataFrame."""
     conn = init_connection()
     if conn:
         try:
@@ -29,12 +29,32 @@ def get_data(query):
             conn.close()
             return df
         except Exception as e:
-            st.error(f"❌ Erreur lors de la récupération des données : {e}")
+            st.error(f"❌ Erreur lors de la récupération : {e}")
             return None
     return None
 
+def save_optimization_result(camion_id, destination, cout_estime, statut="Planifié"):
+    """Enregistre un résultat d'optimisation dans historique_trajets."""
+    conn = init_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            query = """
+                INSERT INTO historique_trajets (camion_id, destination, cout_estime, statut_livraison)
+                VALUES (%s, %s, %s, %s)
+            """
+            cur.execute(query, (camion_id, destination, cout_estime, statut))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return True
+        except Exception as e:
+            st.error(f"❌ Erreur lors de l'enregistrement du trajet : {e}")
+            return False
+    return False
+
 # =================================================================
-# SECTION 2 : CHARGEMENT DE FICHIERS (BACKUP / IMPORT)
+# SECTION 2 : CHARGEMENT DE FICHIERS (IMPORT EXCEL/CSV)
 # =================================================================
 
 def load_logistics_data(file_path):
@@ -66,7 +86,7 @@ def preprocess_for_mit(df):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # Nettoyage des lignes vides sur les colonnes critiques
+    # Nettoyage des lignes vides
     cols_critiques = [c for c in ['Prix', 'Quantité', 'prix_unitaire', 'quantite_actuelle'] if c in df.columns]
     if cols_critiques:
         df = df.dropna(subset=cols_critiques)
