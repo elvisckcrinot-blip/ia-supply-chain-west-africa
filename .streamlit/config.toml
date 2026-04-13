@@ -6,17 +6,17 @@ textColor = "#e8edf5"
 font = "sans serif"
 
 [server]
+# Permet de charger des fichiers Excel/CSV plus lourds (50 Mo)
+maxUploadSize = 50
 headless = true
 enableCORS = false
 enableXsrfProtection = false
-# Augmente la limite pour les imports Excel/CSV de ton WMS (50 Mo)
-maxUploadSize = 50
 
 [browser]
-# Désactive les stats d'usage et masque les boutons Streamlit pour un look "App Pro"
+# Masque le menu "Deploy", "Record", etc., pour un look "Logiciel Pro"
 gatherUsageStats = false
 toolbarMode = "minimal"
 
 [client]
-# Masque les détails d'erreur pour les utilisateurs finaux
+# Masque les détails techniques des erreurs pour les utilisateurs
 showErrorDetails = false
