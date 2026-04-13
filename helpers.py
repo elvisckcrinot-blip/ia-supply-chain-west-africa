@@ -8,8 +8,8 @@ import psycopg2
 
 def init_connection():
     """ 
-    Connexion Ultime Neon : Intégration de l'Endpoint ID dans le User.
-    Résout les erreurs SNI et Endpoint ID non spécifié sans SQLAlchemy.
+    Connexion Ultime Neon : Méthode du User combiné ($).
+    Résout les erreurs SNI et Endpoint ID non spécifié.
     """
     try:
         host = st.secrets["postgres"]["host"]
@@ -18,19 +18,21 @@ def init_connection():
         database = st.secrets["postgres"]["database"]
         port = st.secrets["postgres"]["port"]
         
-        # Extraction précise de l'endpoint_id (ex: ep-steep-glitter-...)
+        # 1. Extraction précise de l'ID du projet (ex: ep-steep-glitter-...)
+        # Le [0] permet de ne récupérer que la première partie avant le premier point
         endpoint_id = host.split('.')[0]
         
-        # TECHNIQUE NEON : Combiner l'identifiant et l'utilisateur avec '$'
+        # 2. TECHNIQUE NEON : Combiner l'identifiant et l'utilisateur avec '$'
+        # Format attendu par le serveur : ep-votre-id$votre-utilisateur
         user_with_endpoint = f"{endpoint_id}${user}"
         
         return psycopg2.connect(
             host=host,
             port=port,
             database=database,
-            user=user_with_endpoint,
+            user=user_with_endpoint, # On injecte l'utilisateur modifié
             password=password,
-            sslmode="require"
+            sslmode="require" # Obligatoire pour la sécurité Neon
         )
     except Exception as e:
         st.error(f"❌ Échec de la connexion sécurisée : {e}")
@@ -41,7 +43,7 @@ def get_data(query):
     conn = init_connection()
     if conn:
         try:
-            # On utilise pandas avec la connexion psycopg2 brute
+            # Lecture directe via Pandas
             df = pd.read_sql(query, conn)
             conn.close()
             return df
@@ -125,4 +127,4 @@ def apply_ui_theme():
         div.stButton > button { font-weight: bold; border-radius: 8px; }
         </style>
     """, unsafe_allow_html=True)
-    
+        
