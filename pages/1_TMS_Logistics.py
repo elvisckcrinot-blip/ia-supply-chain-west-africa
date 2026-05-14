@@ -26,11 +26,11 @@ st.markdown('<h1 style="font-family:Syne; color:#ffad1f; font-size:32px; font-we
 if 'historique_docking' not in st.session_state:
     st.session_state.historique_docking = []
 
-tab1, tab2, tab3 = st.tabs(["💰 Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
+tab1, tab2, tab3 = st.tabs([" Business Plan & ROI", "⚓ Docking GDIZ", "📍 Tracking Corridor"])
 
 # --- ONGLET 1 : STRATÉGIE & RENTABILITÉ ---
 with tab1:
-    st.subheader("📊 Modélisation du Centre de Profit")
+    st.subheader(" Modélisation du Centre de Profit")
     
     # RÉCUPÉRATION DE LA FLOTTE RÉELLE DEPUIS NEON
     df_flotte = get_data("SELECT * FROM flotte_vehicules")
@@ -73,7 +73,7 @@ with tab1:
 
 # --- ONGLET 2 : DOCKING GDIZ ---
 with tab2:
-    st.subheader("⚓ Opérations en Zone Industrielle")
+    st.subheader(" Opérations en Zone Industrielle")
     with st.expander("➕ Enregistrer une nouvelle affectation"):
         with st.form("docking"):
             f1, f2, f3 = st.columns(3)
@@ -92,7 +92,7 @@ with tab2:
 
 # --- ONGLET 3 : TRACKING & HISTORIQUE DES MISSIONS ---
 with tab3:
-    st.subheader("📍 Monitoring du Corridor & Missions")
+    st.subheader(" Monitoring du Corridor & Missions")
     
     df_missions = get_data("SELECT * FROM historique_trajets ORDER BY date_depart DESC LIMIT 10")
     
@@ -110,7 +110,7 @@ with tab3:
     st.markdown(f"""
         <div style="background: rgba(255,255,255,0.03); border-left: 5px solid {color_map[statut]}; border-radius: 12px; padding: 25px;">
             <p style="margin:0; font-size:12px; color:#7a92b0;">SUIVI TEMPS RÉEL</p>
-            <h3 style="margin:5px 0;">📍 {pos.upper()}</h3>
+            <h3 style="margin:5px 0;"> {pos.upper()}</h3>
             <span style="padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background:{color_map[statut]}; color:#0a1628;">{statut.upper()}</span>
         </div>
     """, unsafe_allow_html=True)
