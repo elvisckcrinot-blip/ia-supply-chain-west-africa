@@ -22,7 +22,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-title">🎯 Network Optimizer (SC1x + Six Sigma)</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title"> Network Optimizer (SC1x + Six Sigma)</h1>', unsafe_allow_html=True)
 st.markdown('<span class="six-sigma-badge">MOTEUR CBC AVEC PÉNALITÉ DE VARIABILITÉ</span>', unsafe_allow_html=True)
 
 # --- 1. BASE DE DONNÉES AVEC INDICE SIGMA ---
@@ -38,13 +38,13 @@ database_villes = {
 col_param1, col_param2 = st.columns(2)
 
 with col_param1:
-    st.info("⛽ Paramètres Financiers")
+    st.info(" Paramètres Financiers")
     prix_diesel = st.number_input("Prix Diesel (FCFA/L)", value=700)
     conso_moy = st.number_input("Consommation (L/100km)", value=35)
     charges_fixes = st.number_input("Charges fixes/trajet (FCFA)", value=85000)
 
 with col_param2:
-    st.info("📊 Stratégie Qualité (Six Sigma)")
+    st.info(" Stratégie Qualité (Six Sigma)")
     poids_sigma = st.slider("Poids de la variabilité (Impact Risque)", 0, 100000, 25000)
     produit_select = st.selectbox("Type de fret", ["Fibre de Coton", "Noix de Cajou transformée", "Soja Bio"])
     tonnage_unitaire = {"Fibre de Coton": 22, "Noix de Cajou transformée": 28, "Soja Bio": 30}[produit_select]
@@ -63,7 +63,7 @@ if villes_selectionnees:
     total_camions_dispo = st.slider("Flotte totale disponible (GDIZ)", 1, 100, 30)
 
     # --- 3. LOGIQUE D'OPTIMISATION ---
-    if st.button("🚀 LANCER L'OPTIMISATION ROBUSTE"):
+    if st.button(" LANCER L'OPTIMISATION ROBUSTE"):
         model = pulp.LpProblem("Optimization_Fret_Robust", pulp.LpMinimize)
         vars_camions = {v: pulp.LpVariable(f"Cam_{v}", lowBound=0, cat='Integer') for v in villes_selectionnees}
 
@@ -101,7 +101,7 @@ if villes_selectionnees:
             # --- AFFICHAGE DASHBOARD ---
             res_col1, res_col2 = st.columns([1, 2])
             with res_col1:
-                st.markdown("### 🚛 Allocation Flotte")
+                st.markdown("###  Allocation Flotte")
                 for v in villes_selectionnees:
                     val = int(vars_camions[v].varValue)
                     if val > 0: st.write(f"**{v}** : {val} camions")
