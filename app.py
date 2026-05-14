@@ -4,7 +4,7 @@ from helpers import get_data, apply_ui_theme  # Importation des outils SQL et UI
 # 1. CONFIGURATION DE LA PAGE
 st.set_page_config(
     page_title="West Africa Logistics Hub · MIT CTL", 
-    page_icon="🌍", 
+    page_icon="", 
     layout="wide", 
     initial_sidebar_state="expanded"
 )
@@ -20,7 +20,7 @@ apply_ui_theme()
 # 3. FONCTION DE LOGIN
 def login():
     st.markdown('<div class="hero" style="text-align:center;">', unsafe_allow_html=True)
-    st.subheader("🌍 Accès Sécurisé WA Logistics Hub")
+    st.subheader(" Accès Sécurisé WA Logistics Hub")
     user = st.text_input("Identifiant", placeholder="Ex: Admin, Elvis, Manager...")
     pwd = st.text_input("Mot de passe", type="password")
     if st.button("Entrer dans le Cockpit"):
@@ -39,13 +39,13 @@ if not st.session_state['auth']:
 else:
     # 4. BARRE LATÉRALE
     with st.sidebar:
-        st.markdown('<div style="text-align:center;"><div style="font-size:40px;">🌍</div><h3 style="color:#fff;font-family:Syne;">WA Logistics Hub</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;"><div style="font-size:40px;"></div><h3 style="color:#fff;font-family:Syne;">WA Logistics Hub</h3></div>', unsafe_allow_html=True)
         st.caption(f"Connecté : {st.session_state['role'].upper()}")
         st.divider()
-        st.page_link("app.py", label="🏠 Accueil Cockpit", icon="📊")
-        st.page_link("pages/1_TMS_Logistics.py", label="🚛 Pilotage Transport", icon="🛣️")
-        st.page_link("pages/2_WMS_Logistics.py", label="📦 Gestion Entrepôt", icon="🏗️")
-        st.page_link("pages/3_Smart_Network_Optimizer.py", label="🎯 Smart Optimizer", icon="🧠")
+        st.page_link("app.py", label=" Accueil Cockpit", icon="")
+        st.page_link("pages/1_TMS_Logistics.py", label=" Pilotage Transport", icon="")
+        st.page_link("pages/2_WMS_Logistics.py", label=" Gestion Entrepôt", icon="")
+        st.page_link("pages/3_Smart_Network_Optimizer.py", label=" Smart Optimizer", icon="")
         st.divider()
         if st.button("Se déconnecter"):
             st.session_state['auth'] = False
@@ -87,7 +87,7 @@ else:
 
     with c1:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("🚛 Pilotage TMS")
+        st.subheader(" Pilotage TMS")
         st.caption("ROI de flotte, analyse des coûts et tracking.")
         if st.button("Accéder au TMS", use_container_width=True, key="go_tms"):
             st.switch_page("pages/1_TMS_Logistics.py")
@@ -95,7 +95,7 @@ else:
 
     with c2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📦 Intelligence WMS")
+        st.subheader(" Intelligence WMS")
         st.caption("Modèles MIT SC0x : EOQ, ROP et gestion ABC.")
         if st.button("Accéder au WMS", use_container_width=True, key="go_wms"):
             st.switch_page("pages/2_WMS_Logistics.py")
@@ -103,7 +103,7 @@ else:
 
     with c3:
         st.markdown('<div class="card opti-card">', unsafe_allow_html=True)
-        st.subheader("🎯 Smart Optimizer")
+        st.subheader(" Smart Optimizer")
         st.markdown('<span class="six-sigma-badge">SIX SIGMA INTEGRATED</span>', unsafe_allow_html=True)
         st.caption("Minimisation du risque et des coûts via solveur CBC.")
         if st.button("Lancer l'Optimizer", use_container_width=True, key="go_opti"):
