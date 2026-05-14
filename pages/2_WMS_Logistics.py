@@ -20,7 +20,7 @@ except ImportError:
 # --- STYLE ET UI ---
 apply_ui_theme()
 
-st.markdown('<h1 style="font-family:Syne; color:#ffad1f;">📦 Intelligence Entrepôt (WMS · Cloud Sync)</h1>', unsafe_allow_html=True)
+st.markdown('<h1 style="font-family:Syne; color:#ffad1f;"> Intelligence Entrepôt (WMS · Cloud Sync)</h1>', unsafe_allow_html=True)
 
 # --- SIDEBAR : MODE DE DONNÉES ---
 with st.sidebar:
@@ -33,7 +33,7 @@ with st.sidebar:
         st.success("📡 Connexion Cloud Active")
         uploaded_file = None
 
-tab1, tab2, tab3 = st.tabs(["📊 Dashboard Inventaire", "⚙️ Optimisation Wilson", "🤖 Moteur Prédictif"])
+tab1, tab2, tab3 = st.tabs([" Dashboard Inventaire", " Optimisation Wilson", " Moteur Prédictif"])
 
 # --- ONGLET 1 : ANALYSE DES STOCKS ---
 with tab1:
@@ -86,7 +86,7 @@ with tab1:
 
 # --- ONGLET 2 : WILSON EOQ ---
 with tab2:
-    st.subheader("🎯 Quantité Économique de Commande")
+    st.subheader(" Quantité Économique de Commande")
     col_e1, col_e2 = st.columns([1, 2])
     
     with col_e1:
@@ -109,7 +109,7 @@ with tab2:
 
 # --- ONGLET 3 : IA & SAFETY STOCK ---
 with tab3:
-    st.subheader("🤖 Prédiction du Stock de Sécurité")
+    st.subheader(" Prédiction du Stock de Sécurité")
     c_ia1, c_ia2 = st.columns(2)
     with c_ia1:
         service_lvl = st.select_slider("Taux de Service Cible", options=[0.90, 0.95, 0.98, 0.99], value=0.95)
@@ -119,7 +119,7 @@ with tab3:
             ss = predict_safety_stock(service_lvl, sigma, lead_time)
             st.success(f"Stock de Sécurité : {ss} unités")
     with c_ia2:
-        st.info("💡 Le calcul utilise le Z-score statistique du MIT MicroMasters pour garantir que vous ne tomberez pas en rupture sur le corridor.")
+        st.info(" Le calcul utilise le Z-score statistique du MIT MicroMasters pour garantir que vous ne tomberez pas en rupture sur le corridor.")
 
 st.divider()
 st.caption("WA Logistics Hub · Base de données : Neon Cloud · Moteur : Python 3.9")
